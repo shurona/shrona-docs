@@ -2,7 +2,7 @@
 title: Iron의 Docs
 ---
 Hello Obs
-
+[quartz 홈페이지](https://quartz.jzhao.xyz/hosting)
 
 ```sh
 npx quartz sync
