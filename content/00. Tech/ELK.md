@@ -105,7 +105,7 @@ output {
 ```
 
 ## Elastic Cloud 설정
-LogStash에서 elastic Cloud로 연결하기 위해서 Elastic Cloud [Elastic Cloud 사이트](ElasticElastic — The Search AI Company](https://www.googleadservices.com/pagead/aclk?sa=L&ai=DChcSEwjOgYuBqpqJAxXP1RYFHd09BV0YABAAGgJ0bA&co=1&ase=2&gclid=Cj0KCQjwsc24BhDPARIsAFXqAB2v_ru9vkwL9n9k2ogA367Oxanminp1nPh4hU-5EhowbKj6PIZyGy0aAjPNEALw_wcB&ohost=www.google.com&cid=CAESV-D2bHfylT_b10I2jpKaSJ4lc1ajQiYSfV_ey0s8yxq75EthXu3QJmkG4MD1Udl9WGn5GJIwDM6bFuT3JexlDUINTg_p2xlQowv-Pt1w7fVm2tYvR5d5qg&sig=AOD64_065gGRjMuGpmfWdWhNapiLRFyORg&q&nis=4&adurl&ved=2ahUKEwjNmYaBqpqJAxUtfPUHHa0QBtgQ0Qx6BAgaEAE) 로 들어가서 회원 가입 후 배포된 Depoyments를 확인해서 cloud_id 및 password를 갖고 온 후 아래에 기입해준다.
+LogStash에서 elastic Cloud로 연결하기 위해서 Elastic Cloud [Elastic Cloud 사이트](https://www.googleadservices.com/pagead/aclk?sa=L&ai=DChcSEwjOgYuBqpqJAxXP1RYFHd09BV0YABAAGgJ0bA&co=1&ase=2&gclid=Cj0KCQjwsc24BhDPARIsAFXqAB2v_ru9vkwL9n9k2ogA367Oxanminp1nPh4hU-5EhowbKj6PIZyGy0aAjPNEALw_wcB&ohost=www.google.com&cid=CAESV-D2bHfylT_b10I2jpKaSJ4lc1ajQiYSfV_ey0s8yxq75EthXu3QJmkG4MD1Udl9WGn5GJIwDM6bFuT3JexlDUINTg_p2xlQowv-Pt1w7fVm2tYvR5d5qg&sig=AOD64_065gGRjMuGpmfWdWhNapiLRFyORg&q&nis=4&adurl&ved=2ahUKEwjNmYaBqpqJAxUtfPUHHa0QBtgQ0Qx6BAgaEAE) 로 들어가서 회원 가입 후 배포된 Depoyments를 확인해서 cloud_id 및 password를 갖고 온 후 아래에 기입해준다.
 ```yaml
 output {
 	elasticsearch {
