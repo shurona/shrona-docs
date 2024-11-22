@@ -92,6 +92,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 }
 ```
 
+### SecurityContextHolder에 저장되는 순서
+
+1. `SecurityContextHolder`에서 전략에 맞는 createEmptyContext를 호출해주고 여기서 새로운 `SecurityContextImpl` 객체를 반환해준다.
+2. `SecurityContextImpl`로 들어가서 SecurityContext의 authentication을 setMethod로 설정해준다.
+3. SecurityContextHolder에서 전략에 맞춰서 context를 넣어준다.
+4. Default는 `ThreadLocalSecurityContextHolderStrategy` 이므로 해당 클래스의 setContext를 호출하게 되고 `contextHolder.set(() → context)`를 호출하게 된다.
 ## UsernamePassword 필터의 인증 예시
 
 ### 인증 처리 과정
@@ -108,6 +114,33 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 10. 검증된 인증 객체를 AuthenticationFilter에 전달
 11. 검증된 인증 객체를 SecurityContextHolder의 SecurityContext에 저장
     1. 사용자 정보를 저장한다는 것은 Spring Security가 전통적인 세션-쿠키 기반의 인증 방식을 사용한다.
+
+
+## User의 Authentication의 초기화 시기
+DB를 거치지 않고 인증 정보를 저장하려고 할 때 Request 마다 인증 객체를 생성해 주어야 한다.
+User정보 그 자체로 UserDetails를 생성해 주고 있는데 이것을 위해서는 User를 호출하는 방법뿐이 없는 것으로 보여졌다.
+그래서 Authentication 객체의 라이프 사이클에 대해서 알아보게 되었다.
+Authentication이 얼마나 유지되는지 Debug를 통해서 확인을 해 보았더니 JwtAuthorizationFilter 부터 Response로 나가는 중간에 SecurityContextHolderFilter 를 통과하면서 contextHolder를 clearContext를 진행하면서 초기화해주는 것을 확인할 수 있었다.
+```Java
+private void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)  
+       throws ServletException, IOException {  
+    if (request.getAttribute(FILTER_APPLIED) != null) {  
+       chain.doFilter(request, response);  
+       return;  
+    }  
+    request.setAttribute(FILTER_APPLIED, Boolean.TRUE);  
+    Supplier<SecurityContext> deferredContext = this.securityContextRepository.loadDeferredContext(request);  
+    try {  
+       this.securityContextHolderStrategy.setDeferredContext(deferredContext);  
+       chain.doFilter(request, response);  
+    }  
+    finally {  
+       this.securityContextHolderStrategy.clearContext();  
+       request.removeAttribute(FILTER_APPLIED);  
+    }  
+}
+```
+
 
 
 ## 스프링 필터
