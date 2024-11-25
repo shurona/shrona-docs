@@ -1,3 +1,8 @@
+---
+tags:
+  - spring/querydsl
+---
+
 ## 개념
 QueryDSL은 하이버네이트 쿼리 언어(HQL: Hibernate Query Language)의 쿼리를 타입에 안전하게 생성 및 관리해주는 프레임워크다.  
 QueryDSL은 정적 타입을 이용하여 SQL과 같은 쿼리를 생성할 수 있게 해준다.
