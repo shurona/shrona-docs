@@ -11,6 +11,7 @@ tags:
 |     |     |     |     |     |     | ↑   |     |     |
 |     | a   | b   | a   | a   | b   | a   |     |     |
 |     |     |     |     | a   | b   | a   | a   | b   |
+
 KMP는 접두사와 접미사의 개념을 활용하여서 모든 경우의 수를 계산하지 않고 반복되는 연산을 줄여나가는 기법이다.
 이를 위해서는 접두사와 접미사를 이용해서 pattern이 얼마나 겹치는 지 전처리 작업이 필요하다.
 
@@ -46,7 +47,7 @@ public int[] calPi(String find) {
         int left = 0;  
         for (int right = 1; right < find.length(); right++) {  
             // 스텝이 올라갔을 때 다른 게 나오면 위치를 조정해 준다. 
-            if (left > 0 && find.charAt(left) != find.charAt(right)) {  
+            while (left > 0 && find.charAt(left) != find.charAt(right)) {  
                 left = pi[left - 1];  
             }  
   
