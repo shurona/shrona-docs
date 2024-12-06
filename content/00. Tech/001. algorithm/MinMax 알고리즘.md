@@ -99,3 +99,7 @@ public int dfs(int[][] board, int row, int col, int tRow, int tCol, int depth) {
 	
 	}
 ```
+
+
+### 참고 블로그
+[틱택토](https://towardsdatascience.com/lets-beat-games-using-a-bunch-of-code-part-1-tic-tac-toe-1543e981fec1)
