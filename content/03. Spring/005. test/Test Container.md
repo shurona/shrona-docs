@@ -1,3 +1,10 @@
+---
+tags:
+  - test
+  - testContainer
+  - spring
+---
+
 ## 테스트 container의 사용 이유
 
 테스트 환경에서 redis와 같은 외부 서비스를 CI 환경에서 테스트 하기 위해서는 CI 환경에서 Redis를 띄우거나 Github action marketplace에서 redis를 추가해서 실행을 할 수 있다.
@@ -68,5 +75,61 @@ public void beforeAll(ExtensionContext context) throws Exception {
         System.setProperty("spring.data.redis.host", redis.getHost());
         System.setProperty("spring.data.redis.port", String.valueOf(redis.getMappedPort(port)));
     }
+}
+```
+
+## Kafka 연결
+위의 Redis는 일반적인 TestContainer를 이용해서 연결하는 것을 알아보았고 이번에는 각각 컨테이터에 특화된KafkaContainer를 사용해서 import하는 법을 알아보았다.
+
+### 설정 순서
+테스트를 할 class위에 테스트 컨테이너를 사용하기 위해서 어노테이션 선언을 해준다.   
+테스트 클래스의 생명 주기 동안 컨테이너를 유지합니다.
+```Java
+@Testcontainers
+```
+
+아래의 코드를 이용해서 이미지를 띄우게 된다. 위에서 선언한 Container 와는 다르게  
+포트는 따로 등록해줄 필요가 없이 자체적으로 처리를 하게 된다.   
+로컬에서 띄울 경우 기존에 로컬 서비스와 포트가 충돌 될 수도 있으니 랜덤으로 뜰 수 있도록 설정한다. 
+```Java
+static final KafkaContainer kafka = new KafkaContainer(  
+	    DockerImageName.parse(KAFKA_IMAGE));
+```
+
+테스트 용 Kafka 포트는 랜덤으로 실행이 되므로 위에서 생성된 Kafka Docker 이미지로 부터 메타데이터 정보를 받아서 동적으로 Property를 넣어준다.
+```Java
+@DynamicPropertySource  
+	static void setKafkaProperties(DynamicPropertyRegistry registry) {  
+	    registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);  
+	}
+```
+
+### 연결 기본 코드
+```Java
+...
+// 여기서 import 위치 조심
+import org.testcontainers.containers.KafkaContainer;
+...
+
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)  
+@Testcontainers
+class CouponUserServiceImplTest {
+
+	private static final String KAFKA_IMAGE = "confluentinc/cp-kafka:7.7.1";  
+  
+	//kafka Container  
+	@Container  
+	static final KafkaContainer kafka = new KafkaContainer(  
+	    DockerImageName.parse(KAFKA_IMAGE));
+
+
+	@DynamicPropertySource  
+	static void setKafkaProperties(DynamicPropertyRegistry registry) {  
+	    System.out.println("?? 여기는 실행되나요? " + kafka.getBootstrapServers());  
+	    registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);  
+	}
+
+	// 아래는 테스트 로직
+	...
 }
 ```
