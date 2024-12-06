@@ -1,8 +1,7 @@
 ---
 tags:
-  - test
-  - testContainer
   - spring
+  - test/testcontainer
 ---
 
 ## 테스트 container의 사용 이유
@@ -79,13 +78,16 @@ public void beforeAll(ExtensionContext context) throws Exception {
 ```
 
 ## Kafka 연결
-위의 Redis는 일반적인 TestContainer를 이용해서 연결하는 것을 알아보았고 이번에는 각각 컨테이터에 특화된KafkaContainer를 사용해서 import하는 법을 알아보았다.
+위의 Redis는 일반적인 TestContainer를 이용해서 연결하는 것을 알아보았고 이번에는 각각 컨테이터에 특화된 KafkaContainer를 사용해서 import하는 법을 알아보았다.
 
 ### 설정 순서
 테스트를 할 class위에 테스트 컨테이너를 사용하기 위해서 어노테이션 선언을 해준다.   
 테스트 클래스의 생명 주기 동안 컨테이너를 유지합니다.
 ```Java
 @Testcontainers
+public class CouponUserServiceImpl implements CouponUserService {
+	...
+}
 ```
 
 아래의 코드를 이용해서 이미지를 띄우게 된다. 위에서 선언한 Container 와는 다르게  
@@ -111,7 +113,6 @@ static final KafkaContainer kafka = new KafkaContainer(
 import org.testcontainers.containers.KafkaContainer;
 ...
 
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)  
 @Testcontainers
 class CouponUserServiceImplTest {
 
@@ -133,3 +134,30 @@ class CouponUserServiceImplTest {
 	...
 }
 ```
+
+### 여기서 삽질 했던 부분
+#### 발생했던 에러
+초반에 아래 부분 같이 KafkaContainer를 설정했었다.
+```Java
+@Container  
+	static final KafkaContainer kafka = new KafkaContainer(  
+	    DockerImageName.parse(KAFKA_IMAGE));
+```
+그랬더니 아래와 같은 에러가 발생했었다.
+`Failed to verify that image 'confluentinc/cp-kafka:7.4.0' is a compatible substitute for 'apache/kafka'.`
+이 문제를 해결하기 위해서 [TestContainer Java](https://java.testcontainers.org/modules/kafka/)를 확인했었고 `ConfluentKafkaContainer`의 클래스를 사용했어야 했으나 현재 라이브러리에는 존재하지 않는 것을 확인하였다.
+그래서 해당 공식문서에 연결된 블로그를 확인해보니 `KafkaContainer`를 사용해서 예제를 만드는 것을 확인하였다. 
+그래도 로컬에서는 같은 에러가 발생했었고 원인을 찾아보았다.
+
+#### 해결
+간단한 문제였는데 아래와 같이 Import되는 위치를 변경해주면 되었다.
+```Java
+import org.testcontainers.kafka.KafkaContainer;
+=>
+import org.testcontainers.containers.KafkaContainer;
+```
+
+
+
+### 참고 블로그
+[test container예제](https://testcontainers.com/guides/testing-micronaut-kafka-listener-using-testcontainers/#_write_test_for_kafka_listener)
