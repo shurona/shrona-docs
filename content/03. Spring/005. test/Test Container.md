@@ -151,7 +151,7 @@ class CouponUserServiceImplTest {
 
 #### 해결
 간단한 문제였는데 아래와 같이 Import되는 위치를 변경해주면 되었다.
-```Java
+	```Java
 import org.testcontainers.kafka.KafkaContainer;
 =>
 import org.testcontainers.containers.KafkaContainer;

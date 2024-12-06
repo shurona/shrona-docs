@@ -37,13 +37,13 @@ tags:
 하지만 그렇게 접근 할 시 step에 대해서 코드가 복잡해 지는 부분이 있었습니다.
 이후 예제 코드를 살펴보다가 아래와 같이 현재 이동과 대기로 나누어서 다음과 같이 스위치 하면서 접근을 하는 로직을 보게 되었고 추후에도 번갈아가면서 게임을 진행하는 경우 아래와 같이 적용 하면 좋을 것 같아서 기록해 둔다.
 ```Java
-//                            현재 확인할 row/col    다음에 확인할 row/col
+// 현재 확인할 row/col    다음에 확인할 row/col
 public int dfs(int[][] board, int row, int col, int tRow, int tCol, int depth) {
 
 	...
 
 	for(int i = 0 ; i < 4; i++) {
-						// 다음에 확인할 row/col을 지금으로 넣어준다.
+		// 다음에 확인할 row/col을 지금으로 넣어준다.
 		int dfs = dfs(board, tRow, tCol, afterRow, afterCol, depth + 1) + 1;
 	
 	}
