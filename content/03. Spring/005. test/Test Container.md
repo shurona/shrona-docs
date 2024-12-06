@@ -50,6 +50,7 @@ public class TestContainerConfig implements BeforeAllCallback {
 | testcontainer-ryuk | testcontainers/ryuk:0.0.0 |
 | redis-name-1       | redis:이미지                 |
 | redis-name-2       | redis:이미지                 |
+
 테스트 마다 격리된 구축 환경을 구축하는 것이 맞기 때문에 위와 같이 진행되는 것이 정상적인 Flow지만 만약 리소스가 부족한 환경이라면 아래와 같이 하나의 Redis에서 띄우는 것도 가능하다
 GenericContainer를 생성한 다음에 아래와 같이 이미 존재한 경우에는 띄우지 않는다.
 ```Java
