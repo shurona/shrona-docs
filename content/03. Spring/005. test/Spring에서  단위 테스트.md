@@ -50,6 +50,8 @@ Mock이 필요한 테스트에 직관적으로 사용할 수 있도록 만들어
 ### 주요 어노테이션
 - Mock
 	- Mock 객체를 생성할 때 사용한다.
+- MockBean
+	- Spring에서 제공하는 Bean을 Mocking할 때 사용한다.
 - Spy
 	- 실제 객체를 사용해서 테스트를 진행한다.
 	- Stub 하지 않은 메소드들은 원본 그대로 사용한다.
@@ -111,7 +113,7 @@ void setUp() {
 }
 ```
 
-#### given when then을 사용해서 작성한 예제1
+#### given when then을 사용해서 작성한 성공 예제
 라이더인 유저가 정상적으로 인증을 성공하는지 테스틑 하는 Flow이다.
 서비스의 입력값과 내부로직 상 돌아갈 데이터를 Mock해서 given으로 처리해준다.
 외부 호출을 진행하지 않을 2개의 메서드를 Mocking 처리 해준다.
@@ -147,4 +149,46 @@ public void 인증_성공_테스트() {
 	verify(redisUtil, times(1)).setDataRefreshToken(any(RefreshTokenDto.class));  
 
 }
+```
+
+#### 에러 처리 테스트
+1. assertThatThrownBy 사용
+특정 메서드에 대해서 에러가 발생시키는 Mock을 만든다.
+이후  ssertThatThrownBy를 사용해서 클래스의 타입과 메세지를 확인할 수 있다.
+```Java
+doThrow(new FeignException.NotFound("Rider not found", request, null, null)).when(  
+    riderClient).authRider(requestDto);  
+  
+// then  
+ssertThatThrownBy(() -> {  
+	String token = riderAuthService.riderAuth(requestDto);  
+})
+.isInstanceOf(AuthException.class)  
+.hasMessage(AuthErrorCode.USER_NOT_FOUND.getMessage());
+```
+
+
+2. catchThrowable 사용
+catchThrowable을 사용해서 에러를 먼저 받은 다음에 기존과 같은 방식으로 인스턴스와 메시지를 비교해준다.
+```Java
+doThrow(new FeignException.BadRequest("Invalid Password", request, null, null)).when(  
+    riderClient).authRider(requestDto);  
+  
+Throwable error = Assertions.catchThrowable(() -> {  
+    String token = riderAuthService.riderAuth(requestDto);  
+});  
+  
+// then  
+Assertions.assertThat(error)  
+    .isInstanceOf(AuthException.class)  
+    .hasMessage(AuthErrorCode.INVALID_PASSWORD.getMessage());
+```
+
+3. assertThatExceptionOfType
+Type을 사용해서 먼저 타입을 알려준 다음에 에러 발생 시 메시지 확인도 가능하다.
+```Java
+assertThatExceptionOfType(AuthException.class).isThrownBy(() -> {  
+    String token = riderAuthService.riderAuth(requestDto);  
+})
+.withMessage(USER_NOT_FOUND.getMessage());
 ```
