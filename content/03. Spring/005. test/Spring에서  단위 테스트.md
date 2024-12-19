@@ -87,7 +87,7 @@ class 테스트_클래스_이름 {
 ```
 
 ### 공통 적용 사항
-테스트를 원하는 RiderAuthServic는 InjectsMock으로 주입해준다.
+테스트를 원하는 RiderAuthServic는 InjectsMock으로 주입해준다.   
 외부 서비스를 활용해야 하는 RiderClient 및 RedisUtils는 Mock을 이용한다.  
 다른 외부 서비스를 사용하지 않는 JwtTokenService는 Spy를 써서 기존 로직을 이용한다.  
 Inject될 Service에 생성자로 추가해줘야 할 데이터가 있어서 `BeforeEach`를 활용해서 셋업을 해준다.
@@ -153,6 +153,7 @@ public void 인증_성공_테스트() {
 
 #### 에러 처리 테스트
 1. assertThatThrownBy 사용
+
 특정 메서드에 대해서 에러가 발생시키는 Mock을 만든다.
 이후  ssertThatThrownBy를 사용해서 클래스의 타입과 메세지를 확인할 수 있다.
 ```Java
@@ -168,7 +169,8 @@ ssertThatThrownBy(() -> {
 ```
 
 
-2. catchThrowable 사용
+2. catchThrowable 사용   
+
 catchThrowable을 사용해서 에러를 먼저 받은 다음에 기존과 같은 방식으로 인스턴스와 메시지를 비교해준다.
 ```Java
 doThrow(new FeignException.BadRequest("Invalid Password", request, null, null)).when(  
@@ -185,6 +187,7 @@ Assertions.assertThat(error)
 ```
 
 3. assertThatExceptionOfType
+
 Type을 사용해서 먼저 타입을 알려준 다음에 에러 발생 시 메시지 확인도 가능하다.
 ```Java
 assertThatExceptionOfType(AuthException.class).isThrownBy(() -> {  

@@ -1,3 +1,11 @@
+---
+tags:
+  - elk
+  - elasticSearch
+  - logstash
+  - kibana
+---
+
 ## 개념
 로그모니터링 시스템이면서 검색엔진이다. 오픈소스라서 무료로 사용이 가능하다
 

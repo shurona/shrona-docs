@@ -19,7 +19,7 @@ testImplementation 'org.springframework.boot:spring-boot-testcontainers'
 
 ## 개념 설명
 [Spring TestContiainer 문서](https://docs.spring.io/spring-boot/reference/testing/testcontainers.html)
-Testcontainers 라이브러리는 Docker 컨테이너 안에서 서비스가 동작하고 다루는 방식을 제공한다.
+Testcontainers 라이브러리는 Docker 컨테이너 안에서 서비스가 동작하고 다루는 방식을 제공한다.   
 JUnit과 통합되어 있으며 테스트가 동작하기 전에 컨테이너가 실행이 된다.
 
 ## Config 설정
@@ -151,9 +151,11 @@ class CouponUserServiceImplTest {
 
 #### 해결
 간단한 문제였는데 아래와 같이 Import되는 위치를 변경해주면 되었다.
-	```Java
+```Java
+// (잘못된 위치)
 import org.testcontainers.kafka.KafkaContainer;
 =>
+// (여기를 사용하자)
 import org.testcontainers.containers.KafkaContainer;
 ```
 

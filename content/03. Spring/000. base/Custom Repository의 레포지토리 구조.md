@@ -1,3 +1,8 @@
+---
+tags:
+  - repository
+---
+
 [Custom Repository Implementations Spring 공식문서](https://docs.spring.io/spring-data/jpa/reference/repositories/custom-implementations.html)
 ## 개념
 처음에 CustomRepository 구조를 갖고 가는 이유를 기존의 Spring Data JPA Repository 하나만을 Service에서 상속받고 싶어서 사용하는 구조로 이해를 하였다.

@@ -30,7 +30,7 @@
 @EnableEurekaServer
 @SpringBootApplication
 public class ServerApplication() {
-		//
+	//
 }
 ```
 
