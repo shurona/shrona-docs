@@ -74,9 +74,22 @@ Mock이 필요한 테스트에 직관적으로 사용할 수 있도록 만들어
 예제
 ```Java
 CompanyResponseDto companyResponseDto = mock(CompanyResponseDto.class);
+
 when(companyResponseData.getData()).thenReturn(companyResponseDto);
+
+doReturn(new CommonResponse<RiderResponseDto>(200, "메시지", givenRider))  
+    .when(riderClient).authRider(requestDto);
 ```
 
+#### 두 방식의 차이점
+
+| 특징        | when(...).thenReturn(...) | doReturn(...).when(...)               |
+| --------- | ------------------------- | ------------------------------------- |
+| 기본 사용 사례  | 일반적인 메서드 Stub 처리          | 예외를 방지하거나 final/static/private 메서드 처리 |
+| 가독성       | 상대적으로 간결하고 직관적            | 약간 복잡하고 이해하기 어려울 수 있음                 |
+| 예외 발생 가능성 | 실제 메서드 호출 시 예외 발생 가능      | 메서드를 호출하지 않으므로 예외 발생하지 않음             |
+| 사용 가능 범위  | 일반 메서드                    | final, private, void 메서드에도 사용 가능      |
+| 실행 시점     | 메서드가 실제 호출될 때 Stub 설정     | Stub 설정 시점에 메서드를 실행하지 않음              |
 ### Spring에서 사용 방법
 아래와 같이 테스트 할 클래스의 어노테이션으로 붙여주면 된다.
 ```Java
