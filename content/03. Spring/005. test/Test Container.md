@@ -3,7 +3,6 @@ tags:
   - spring
   - test/testcontainer
 ---
-
 ## 테스트 container의 사용 이유
 
 테스트 환경에서 redis와 같은 외부 서비스를 CI 환경에서 테스트 하기 위해서는 CI 환경에서 Redis를 띄우거나 Github action marketplace에서 redis를 추가해서 실행을 할 수 있다.
