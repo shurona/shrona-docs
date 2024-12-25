@@ -164,6 +164,18 @@ public void 인증_성공_테스트() {
 }
 ```
 
+##### 배열 포함 확인
+특정 값이 배열에 포함되었는지 확인하기 위해서는 아래와 같이 확인할 수 있다.
+```Java
+// contains를 사용해서 Output값이 포함되었는지 여부 확인
+assertThat(List.of(ownerOne, ownerTwo)).contains(stores.get(0).getOwnerId());  
+
+// stream을 사용해서 하나씩 비교해가면서 Match 여부를 확인해 본다.
+assertThat(Stream.of(ownerOne, ownerTwo)  
+    .anyMatch(owenerId -> owenerId.equals(stores.get(0).getOwnerId())))
+    .isTrue();
+```
+
 #### 에러 처리 테스트
 1. assertThatThrownBy 사용
 
