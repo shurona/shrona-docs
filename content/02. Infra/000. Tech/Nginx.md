@@ -2,7 +2,7 @@
 
 ## Nginx 설치하기
 ```shell
-// ec2(amazon linux 2)
+# ec2(amazon linux 2)
 sudo yum install nginx
 ```
 설치하고 나면 `/etc/nginx` 에 디렉토리가 생성이 된다. 아래가 기본으로 내려오는 conf파일이다.
