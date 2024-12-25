@@ -1,3 +1,9 @@
+---
+tags:
+  - ec2
+  - nginx
+---
+
 # Nginx로 리버스 프록시 설정
 
 ## Nginx 설치하기
