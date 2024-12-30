@@ -7,7 +7,8 @@ tags:
 QueryDSL은 하이버네이트 쿼리 언어(HQL: Hibernate Query Language)의 쿼리를 타입에 안전하게 생성 및 관리해주는 프레임워크다.  
 QueryDSL은 정적 타입을 이용하여 SQL과 같은 쿼리를 생성할 수 있게 해준다.
 ## 사용하는 이유
-기존의 JPQL을 사용하거나 Spring Data Jpa를 사용하게 되면 기본적으로 String 형식으로 들어가게 되어서 컴파일 상에서 문제가 발생하는지 확인이 불가능하다. ⇒ String을 보고 Type 체크도 불가능하며 중간에 Space 여부도 확인이 불가능해서 `"from p__table" + "where id = 1";` 와 같이 String을 사용할 경우 에러가 발생할 경우도 많다.
+기존의 JPQL을 사용하거나 Spring Data Jpa를 사용하게 되면 기본적으로 String 형식으로 들어가게 되어서 컴파일 상에서 문제가 발생하는지 확인이 불가능하다. ⇒ String을 보고 Type 체크도 불가능하며 중간에 Space 여부도 확인이 불가능해서   
+`"from p__table" + "where id = 1";` 와 같이 String을 사용할 경우 중간에 띄어쓰기 빼먹음과 같이 에러가 발생할 경우도 많다.   
 
 이를 위해서 Type Safe 즉 컴파일 상에서 에러 체크를 가능하게 하는 것이 QueryDSL이다.
 
