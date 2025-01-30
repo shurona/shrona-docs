@@ -115,6 +115,3 @@ db.collection.updateOne(
   }
 }
 ```
-
-#### tag
-[[MongoDB]]
