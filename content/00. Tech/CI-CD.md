@@ -1,5 +1,4 @@
 ---
-tags:
-  - ci-cd
+tags: []
 publish: false
 ---

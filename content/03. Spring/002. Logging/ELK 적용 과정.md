@@ -3,9 +3,9 @@ tags:
   - elk
 ---
 
-# LogStash를 Spring에 적용
-## 과정
-### build.gradle에 추가
+# LogStash를 Spring에 적용해보자
+## 적용 과정
+### logstash 라이브러리를 build.gradle에 추가
 ```gradle
 // # Logback <-> Logstash 연동을 위함 
 implementation 'net.logstash.logback:logstash-logback-encoder:8.0'
@@ -49,7 +49,7 @@ implementation 'net.logstash.logback:logstash-logback-encoder:8.0'
 </configuration>
 ```
 LogStash를 적용하는 XML 파일의 정보이다.
-#### 스캔 설정
+#### xml 설정파일 스캔 인터벌 설정
 `<configuration scan="true" scanPeriod="30 seconds">`
 LogBack이 XML 설정파일의 변경 여부를 감시하는 설정이다. 30초 마다 스캔으로 설정을 함으로써 XML이 변경될 때마다 반영이 되도록 한다.
 
@@ -61,7 +61,7 @@ encoder는 로그 메세지의 포맷을 정리하며 아래의 설정은 Patter
 아래와 같은 패턴으로 로그가 출력 됨
 ```xml
 <pattern> 
-// 연월일                     고정값(검색용)  쓰레드이름 로그 레벨 로거이름 최대 36자까지
+// 연월일                     고정값(검색용)     쓰레드이름  로그레벨   로거이름(최대 36자까지) 
 %d{yyyy-MM-dd HH:mm:ss.SSS} springboot-elk [%thread] %-5level %logger{36} 
 
  메세지 표시
@@ -201,6 +201,6 @@ source를 통해서 property를 지정한 다음에 변수 이름을 지정하�
 위와 같이 사용할 수 있다.
 
 ## 참고 블로그
-[How to set up Filebeat and LogStash with ElasticSearch](https://www.gosink.in/how-to-set-up-filebeat-and-logstash-with-elastic-search-and-elastic-cloud/)
-[Spring 멀티쓰레드 환경에서 MDC를 사용해 요청 별로 식별가능한 로그 남기기](https://mangkyu.tistory.com/266)
+[How to set up Filebeat and LogStash with ElasticSearch](https://www.gosink.in/how-to-set-up-filebeat-and-logstash-with-elastic-search-and-elastic-cloud/)   
+[Spring 멀티쓰레드 환경에서 MDC를 사용해 요청 별로 식별가능한 로그 남기기](https://mangkyu.tistory.com/266)   
 [Logging :: Spring Boot](https://docs.spring.io/spring-boot/reference/features/logging.html#features.logging.logback-extensions.environment-properties)
