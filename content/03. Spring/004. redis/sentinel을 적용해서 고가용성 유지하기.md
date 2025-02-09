@@ -26,11 +26,11 @@ Docker 내부의 네트워크는 호스트의 네트워크와 분리되어 있�
 서버를 Docker화 시켜서 같은 네트워크로 배포 진행하게 되면 해결될 문제였지만 로컬 상황에서 테스트를 해보고 싶어서   
 아래와 같이 해결을 진행하였다.
 ### 해결 방법
+[참고 블로그](https://blog.xavierz.dev/blog/posts/docker-redis-sentinel)    
 
 ```mermaid
 graph TD
 
-%% Bridge Network Group
 
 subgraph Bridge Network
 
@@ -42,9 +42,6 @@ C[Sentinel<br/>172.18.0.3]
 
 end
 
-  
-
-%% Host Machine Network
 
 subgraph Host Machine
 
@@ -56,15 +53,12 @@ end
 
   
 
-%% 애플리케이션 계층
-
 subgraph Application Layer
 
 G[Application<br/>192.168.0.2]
 
 end
 
-%% 연결 관계
 
   
 
@@ -76,12 +70,10 @@ C -->|Docker Bridge| F
 
   
 
-%% 애플리케이션과 마스터 연결
-
 G -->|Master is 192.168.0.2:6379| D
 ```
 
-[참고 블로그](https://blog.xavierz.dev/blog/posts/docker-redis-sentinel)   
+
 #### 호스트 네트워크를 추출한다.
 ```shell
 IP=`ifconfig 
