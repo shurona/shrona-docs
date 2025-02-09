@@ -81,15 +81,15 @@ C -->|Docker Bridge| F
 G -->|Master is 192.168.0.2:6379| D
 ```
 
-[참고 블로그](https://blog.xavierz.dev/blog/posts/docker-redis-sentinel)
--  호스트 네트워크를 추출한다.
+[참고 블로그](https://blog.xavierz.dev/blog/posts/docker-redis-sentinel)   
+#### 호스트 네트워크를 추출한다.
 ```shell
 IP=`ifconfig 
 | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' 
 | grep -Eo '([0-9]*\.){3}[0-9]*' 
 | grep -v '127.0.0.1'`
 ```
-- 추출한 네트워크를 Sentinel에서 마스터를 지정하는 ip로 지정해준다.
+#### 추출한 네트워크 IP를 Sentinel에서 마스터를 지정하는 ip로 지정해준다.
 sentinel을 실행하는 shell code
 ``` shell
 #!/bin/bash
@@ -104,6 +104,8 @@ sentinel.conf파일 설정의 master 위치 설정 부분
 port 26379
 sentinel monitor mymaster $HOST_IP 6379 2
 ```
+
+이렇게 할 경우 호스트 머신의 IP를 사용해서 통신이 가능해진다.
 
 
 
