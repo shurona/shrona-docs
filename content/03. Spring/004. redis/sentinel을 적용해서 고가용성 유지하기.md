@@ -28,59 +28,57 @@ Docker 내부의 네트워크는 호스트의 네트워크와 분리되어 있�
 ### 해결 방법
 
 ```mermaid
-
 graph TD
 
-    %% Bridge Network Group
+%% Bridge Network Group
 
-    subgraph "Bridge Network"
+subgraph Bridge Network
 
-        A[Master<br>172.18.0.1]
+A[Master<br/>172.18.0.1]
 
-        B[Slave<br>172.18.0.2]
+B[Slave<br/>172.18.0.2]
 
-        C[Sentinel<br>172.18.0.]
+C[Sentinel<br/>172.18.0.3]
 
-    end
-
-  
-
-    %% Host Machine Network
-
-    subgraph "Host Machine"
-
-        D[Redis Master<br>192.168.0.2:6379] <--> 
-        E[Redis Slave<br>192.168.0.2:6380]
-
-        E <--> F[Redis Sentinel<br>192.168.0.2:26379]
-
-    end
+end
 
   
 
-    %% 연결 관계
+%% Host Machine Network
 
-    A -->|Docker Bridge| D
+subgraph Host Machine
 
-    B -->|Docker Bridge| E
+D[Redis Master<br/>192.168.0.2:6379] <--> E[Redis Slave<br/>192.168.0.2:6380]
 
-    C -->|Docker Bridge| F
+E <--> F[Redis Sentinel<br/>192.168.0.2:26379]
 
-  
-
-    %% 애플리케이션 계층
-
-    subgraph "Application Layer"
-
-        G[Application<br>192.169.0.2]
-
-    end
+end
 
   
 
-    %% 애플리케이션과 마스터 연결
+%% 애플리케이션 계층
 
-    G -->|Master is 192.168.0.2:6379| D
+subgraph Application Layer
+
+G[Application<br/>192.168.0.2]
+
+end
+
+%% 연결 관계
+
+  
+
+A -->|Docker Bridge| D
+
+B -->|Docker Bridge| E
+
+C -->|Docker Bridge| F
+
+  
+
+%% 애플리케이션과 마스터 연결
+
+G -->|Master is 192.168.0.2:6379| D
 ```
 
 [참고 블로그](https://blog.xavierz.dev/blog/posts/docker-redis-sentinel)
