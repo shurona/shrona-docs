@@ -7,14 +7,16 @@ tags:
 
 # 외부 API를 위한 통신 방법
 ## RestTemplate
-[RestTemplate Deprecate 이슈](https://github.com/spring-projects/spring-framework/issues/32016)
+외부 통신을 위한 API로 동기방식으로 동작하며 HTTP 메서드별로 getForObject(), postForEntity() 등 구체적인 메서드를 호출하여 요청을 보내게 된다.
+다양한 메시지 컨버터, 인터셉터, 에러 핸들러 등을 통해 세밀하게 커스터마이징할 수 있다.
+[RestTemplate Deprecate 이슈](https://github.com/spring-projects/spring-framework/issues/32016)   
 1월에 RestTemplate에 관련해서 Github에 물어본 질문이 있었는데 여기에서 답변은 7.x 버전까지는 지속적으로 유지 될 것이고 많은 사람들에게 혼돈을 주는 것 같아서 유지보수 모드도 제거했다고 적혀있다.
 Spring 6.1 버전 부터 코드가 더 유연하고 가독성이 좋은 API를 제공하게 되는 것이 RestClient이다.
 ## WebClient
 WebFlux에서 제공하는 HTTP 클라이언트로, 비동기적으로 Non-blocking 방식의 요청을 지원한다.
 
 ## RestClient
-[RestClient 공식문서](https://docs.spring.io/spring-framework/reference/integration/rest-clients.html)
+[RestClient 공식문서](https://docs.spring.io/spring-framework/reference/integration/rest-clients.html)   
 스프링에서 외부 api를 호출함에 있어서 RestTemplate, WebClient, RestClient를 사용한다. 기존에는 RestTemplate이 사용이 되었으나 Template 클래스가 Http 기능들을 노출하게 됨에 따라서 너무나도 많은 메서드들을 오버로드 하는 문제가 있다고 판단되었다.
 
 위의 문제를 해결하기 위해서 Spring 5.0에서 나온 것이 WebClient이다. 하지만 WebClient는 webflux아래에서 돌아가게 되어서 기본적으로 MVC로 동작하는 spring에서 WebClient를 사용하기 위해서 webflux의 모든 의존성을 추가해야 하는 단점이 있다.
