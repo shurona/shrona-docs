@@ -2,6 +2,7 @@
 tags:
   - restClient
   - restTemplate
+  - webClient
 ---
 
 # 외부 API를 위한 통신 방법
@@ -20,22 +21,30 @@ WebFlux에서 제공하는 HTTP 클라이언트로, 비동기적으로 Non-block
 ### Http Interface
 Http 요청을 위한 서비스를 자바 인터페이스와 어노테이션으로 정의 할 수 있도록 도와주는 역할이다.   
 Http Interface와 연관하기 위해서 아래와 같이 Adpater를 만들어셔 연동시켜준다.
+
+#### 적용해본 예시
 ```Java
-// 
+// weatherConfig의 base URL을 사용하여 DefaultUriBuilderFactory를 생성하고,
+// URL 인코딩을 수행하지 않도록 설정
 DefaultUriBuilderFactory uriBuilderFactory = new DefaultUriBuilderFactory(
     weatherConfig.baseurl());
 uriBuilderFactory.setEncodingMode(EncodingMode.NONE);
 
-//
+// 생성한 uriBuilderFactory와 로그용 인터셉터(logRequestInterceptor)를 
+// 이용해 RestClient를 빌드
 RestClient restClient = RestClient.builder()
     .uriBuilderFactory(uriBuilderFactory)
     .requestInterceptor(logRequestInterceptor())
     .build();
 
-// 
+// RestClient를 어댑터로 감싸서 HttpServiceProxyFactory에 사용할 수 있도록 변환
 RestClientAdapter adapter = RestClientAdapter.create(restClient);
+
+// 어댑터를 기반으로 HTTP 서비스 프록시 팩토리를 빌드
 HttpServiceProxyFactory factory = HttpServiceProxyFactory.builderFor(adapter).build();
 
+// WeatherClient 인터페이스에 대한 HTTP 클라이언트 프록시를 생성하여, 
+// 이후 WeatherClient의 메서드 호출 시 REST API 호출이 수행되도록 함
 factory.createClient(WeatherClient.class);
 ```
 
@@ -56,6 +65,15 @@ public interface WeatherClient {
     );
 
 }
+
+```
+이후 외부 API 호출이 필요한 지점에서 아래와 같이 의존성을 주입받은 이후에 메서드를 호출해주면 된다.
+```Java
+private final WeatherClient weatherClient;
+
+// API 사용을 이용을 위한 메서드 호출
+WeatherResponse weatherInfo 
+= weatherClient.findWeatherInfo(weatherConfig.key(), today,  x, y);
 ```
 
 ## RestClient 적용 이후 문제 발생했던 점
