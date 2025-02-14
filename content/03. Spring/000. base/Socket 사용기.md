@@ -1,6 +1,8 @@
 ---
 tags:
   - webSocket
+  - stomp
+draft: "true"
 ---
 # Spring에서 Socket 기본 설정
 ## 기본 연결을 위한 Spring 설정
@@ -46,3 +48,8 @@ public class WebSocketConfig implements WebSocketConfigurer {
 ```
 
 
+# STOMP를 사용해서 Spring 연결
+## STOMP 사용가능하게 설정
+```Java
+
+```
