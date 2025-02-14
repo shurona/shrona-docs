@@ -33,10 +33,14 @@ DefaultUriBuilderFactory uriBuilderFactory = new DefaultUriBuilderFactory(
 uriBuilderFactory.setEncodingMode(EncodingMode.NONE);
 
 // 생성한 uriBuilderFactory와 로그용 인터셉터(logRequestInterceptor)를 
-// 이용해 RestClient를 빌드
-RestClient restClient = RestClient.builder()
-    .uriBuilderFactory(uriBuilderFactory)
-    .requestInterceptor(logRequestInterceptor())
+// 이용해 RestClient를 빌드하는 예시들
+RestClient restClient = RestClient.builder()  
+    .baseUrl(deeplBaseUrl)  
+    .requestInterceptor(restClientInterceptor())  
+    .defaultHeaders(headers -> {  
+        headers.set("Authorization", "DeepL-Auth-Key " + apiKeyUTF8);  
+        headers.setContentType(MediaType.APPLICATION_JSON);  
+    })  
     .build();
 
 // RestClient를 어댑터로 감싸서 HttpServiceProxyFactory에 사용할 수 있도록 변환
