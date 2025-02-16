@@ -56,3 +56,18 @@ destination:/topic/price.stock.MMM
 
 {"ticker":"MMM","price":129.45}^@
 ```
+# 장점
+- 커스텀 메시징 프로토콜 및 메시지 포맷을 직접 만들 필요 없음
+	- WebSocket은 기본적으로 바이너리 또는 텍스트 메시지를 송수신하는 기능만 제공
+	- STOMP를 사용하면 메시지 헤더, 목적지, 구독 등의 구조를 제공하므로 별도의 프로토콜을 정의할 필요가 없음
+- 다양한 STOMP 클라이언트 지원
+	- STOMP는 표준화된 메시징 프로토콜이므로 Java(Spring), JavaScript, Python, C++ 등 다양한 클라이언트에서 사용 가능
+- RabbitMQ, ActiveMQ 등 메시지 브로커와 연동 가능
+	- 메시지 브로커(RabbitMQ, ActiveMQ 등)를 사용하면 WebSocket 서버의 부담을 줄이고 확장성을 향상 시킬 수 있다
+	- 클라이언트가 브로커를 통해 메시지를 주고받으며, 다수의 사용자에게 메시지를 브로드캐스트할 수 있음
+- Spring의 @Controller와 통합 가능
+	- STOMP를 사용하면 WebSocket 메시지를 특정 @Controller 메서드로 라우팅 가능.
+	- destination 헤더를 활용하여 메시지를 컨트롤러에서 직접 처리할 수 있음
+- Spring Security를 활용한 메시지 보안
+	- STOMP 메시지는 사용자 인증 및 권한 검사를 적용할 수 있음
+	- 특정 사용자에게만 메시지를 전달하거나, 특정 목적지에 대한 접근을 제어 가능
