@@ -159,5 +159,73 @@ public String handler(String greeting) {
 ```
 
 #### 구독 처리시 주의 사항
-클라이언트가 구독할 때는  enableSimpleBroker("/topic", "/queue")로 설정된 경로를 구독해야 한다.   
+클라이언트가 구독할 때는 enableSimpleBroker("/topic", "/queue")로 설정된 경로를 구독해야 한다.   
 처음에 잘 모르고 설정할 때 어떤 URL이라도 된다고 생각하고 임의의 URL을 설정했었으나 클라이언트에서 메시지를 받을 수 없는 상황이 있었고 위와 같이 Broker에 연결된 url로 설정한 이후에 클라이언트에서 데이터를 받을 수 있었다.
+
+## Spring Eureka 웹 소켓 Gateway 프록시 하기
+### yaml 파일로 설정하기
+config파일을 아래와 같이 설정을 함으로써 프록시 설정을 한다.
+```yaml
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: websocket-route
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/stomp-socket
+          filters:
+            - RemoveRequestHeader=Cookie
+            - name: AuthorizationHeaderFilter
+              args: {}
+```
+### Java 코드로 설정하기
+아래와 같이 들어오는 route에서 라우팅 할 수 있는 위치를 지정할 수 있다.
+```Java
+@Bean  
+public RouteLocator gatewayRoutes(RouteLocatorBuilder builder) {  
+    return builder.routes()
+		// socket 연결  
+		.route("websocket-route", r -> r.path("/stomp-socket")  
+		    .filters(f -> f  
+		        .removeRequestHeader("Cookie")  
+		        .filter(authorizationHeaderFilter.apply(  
+		            new AuthorizationHeaderFilter.Config()))  
+		    )  // 필터 팩토리로 필터 생성  
+		    .uri("lb://USER-SERVICE"))
+```
+
+
+# Web Socket의 토큰 인증
+STOMP 메시지 프로토콜레벨에서는 헤더를 이용해서 토큰 인증이 가능하다.
+1. STOMP 클라이언트를 사용해서 연결 시간에 인증 헤더를 전달한다.
+2. `ChannelInterceptor`를 이용해서 인증헤더를 처리한다.
+
+일반적인 http을 이용해서 header를 접근 할 경우 STOMP클라이언트로 전송된 헤더로 접근할 수가 없다. 따라서 아래와 같이 Spring Stomp에서 제공하는 interceptor를 사용해서 헤더에 접근해서 인증할 수 있다.
+```Java
+/*
+	message: 클라이언트가 전송한 메시지 객체
+	channel: 메시지가 전달이 될 채널
+*/
+@Override  
+public Message<?> preSend(Message<?> message, MessageChannel channel) {  
+	//STOMP 헤더를 더 쉽게 다룰 수 있도록 감싸준다.
+    StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);  
+
+	// 클라이언트가 WebSocket 연결을 시도할 때(CONNECT 프레임이 들어올 때) 실행되는 것을 의미한다.
+    if (StompCommand.CONNECT.equals(accessor.getCommand())) {  
+        String authHeader = accessor.getFirstNativeHeader("Authorization");  
+        // 위에서 뽑아온 헤더를 확인할 수 있다.
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {  
+            throw new IllegalArgumentException("Missing or invalid Authorization header");  
+        }
+    }
+}
+```
+
+> #### STOMP 존재하는 주요 프레임
+>- CONNECT: 클라이언트가 서버에 WebSocket 연결 요청.
+>- SUBSCRIBE: 특정 채널을 구독.
+>- SEND: 메시지를 전송.
+>- DISCONNECT: 연결 종료.
+>- ... 이외에도 더 있다.

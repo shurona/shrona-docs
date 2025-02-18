@@ -36,6 +36,13 @@ public ChatRequestDto handler(String message) {
 
 ## 클라이언트에서 JSON 형태로 넘어 오는 경우
 받을 형식을 아래와 같이 형식에 맞춰서 넘어 오는 경우 크게 설정 없이 자동으로 변환될 수 있다.
+클라이언트 예시
+```javascript
+const message = { userId: 1, chatData: "hello" };
+
+stompClient.publish({ destination: destinationPath, body: JSON.stringify(message) });
+```
+서버 DTO 예시
 ```Java
 public record ChatRequestDto(
     Long userId,
