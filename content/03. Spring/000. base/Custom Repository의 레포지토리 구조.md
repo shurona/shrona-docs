@@ -33,9 +33,12 @@ interface UserRepository extends CrudRepository<User, Long>, CustomizedUserRepos
 }
 ```
 
-## 동작 방식
+## 사용하는 이유
+- QueryDSL을 사용함으로써 복잡한 동적 쿼리 처리가 가능하다.
+- 가독성이 높은 코드를 제공할 수 있다.
+- 쿼리 로직을 `customRepository`로 분리함으로써 유지보수성이 증가한다.
 
-  
+## 동작 방식
 
 ### Spring Data JPA 동작
 
