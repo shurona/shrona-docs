@@ -49,6 +49,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
 
 # STOMP를 사용해서 Spring 연결
+[[STOMP란]] 
 ## STOMP 사용가능하게 설정
 외부와 연결된 socket url을 아래와 같이 설정해준다.
 ```Java
@@ -119,7 +120,7 @@ graph TD
 	- 서버 측 애플리케이션 코드 내에서 메시지 브로커에 메시지를 전송한다.
 
 WebSocket에 연결되서 메시지가 수신이 되면 STOMP 프레임으로 디코딩되고 스프링 메시지 표현으로 변경이 되면서 `clientboundChannel`로 전송되어서 처리가 된다.   
-예를 들어, 대상 헤더가 /app으로 시작되는 STOMP 메시지는 `@MessageMapping` 메서드로 전달이 될 수 있지만 `/topic`, `/queue` 메시지는 메시지 브로커로 직접 라우팅 될 수 있다.   
+예를 들어, 대상 헤더가 `/app`으로 시작되는 STOMP 메시지는 `@MessageMapping` 메서드로 전달이 될 수 있지만 `/topic`, `/queue` 메시지는 메시지 브로커로 직접 라우팅 될 수 있다.   
 	
 ## Controller에서 Socket에서 보낸 메시지 받기
 클라이언트에서 보낸 Socket 메시지를 받기 위해서 아래와 같이 Controller를 설정한 다음에 아래와 같이 받기 원하는 url을 설정해준다.    
@@ -159,7 +160,7 @@ public String handler(String greeting) {
 ```
 
 #### 구독 처리시 주의 사항
-클라이언트가 구독할 때는 enableSimpleBroker("/topic", "/queue")로 설정된 경로를 구독해야 한다.   
+클라이언트가 구독할 때는 `enableSimpleBroker("/topic", "/queue")`로 설정된 경로를 구독해야 한다. 
 처음에 잘 모르고 설정할 때 어떤 URL이라도 된다고 생각하고 임의의 URL을 설정했었으나 클라이언트에서 메시지를 받을 수 없는 상황이 있었고 위와 같이 Broker에 연결된 url로 설정한 이후에 클라이언트에서 데이터를 받을 수 있었다.
 
 ## Spring Eureka 웹 소켓 Gateway 프록시 하기
@@ -188,7 +189,6 @@ public RouteLocator gatewayRoutes(RouteLocatorBuilder builder) {
 		// socket 연결  
 		.route("websocket-route", r -> r.path("/stomp-socket")  
 		    .filters(f -> f  
-		        .removeRequestHeader("Cookie")  
 		        .filter(authorizationHeaderFilter.apply(  
 		            new AuthorizationHeaderFilter.Config()))  
 		    )  // 필터 팩토리로 필터 생성  
