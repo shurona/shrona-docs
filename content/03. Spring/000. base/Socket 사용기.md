@@ -229,3 +229,6 @@ public Message<?> preSend(Message<?> message, MessageChannel channel) {
 >- SEND: 메시지를 전송.
 >- DISCONNECT: 연결 종료.
 >- ... 이외에도 더 있다.
+
+
+# 소켓 에러 핸들링
