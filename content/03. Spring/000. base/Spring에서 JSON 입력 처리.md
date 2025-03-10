@@ -1,6 +1,7 @@
 ---
 tags:
   - json
+  - spring/json
 ---
 # 소켓에서 입력 다루기
 ## 클라이언트에서 String으로 넘어오는 경우

@@ -230,5 +230,44 @@ public Message<?> preSend(Message<?> message, MessageChannel channel) {
 >- DISCONNECT: 연결 종료.
 >- ... 이외에도 더 있다.
 
-
 # 소켓 에러 핸들링
+# 적용 중에 발생한 문제
+## STOMP 헤더에 addNativeHeader를 추가했는데 controller에서 못차는 경우
+### 문제 접근
+소켓의 인증을 구현하기 위해서 소켓이 연결되었을 때 JWT 토큰에서 userId를 갖고 와서 Header에 넣어 주고 Controller 및 `@EventListener`에서 userId를 접근 하려고 하였다.   
+이를 위해서 `StompHeaderAccessor`에서 `addNativeHeader`를 사용해서 Header에 추가를 해줬다.
+```Java
+StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);  
+  
+// 접속할 때에만 token 검증  
+if (StompCommand.CONNECT.equals(accessor.getCommand())) {  
+	... // 비즈니스 로직
+
+	// accessor 헤더에 유저 정보를 넘겨준다.
+	accessor.addNativeHeader("userId", dto.userId());
+
+}
+```
+이후 Controller에서 아래와 같이 접근하려고 하였으나 계속 null로 나왔다.
+```Java
+        String userId = (String) accessor
+	        .getSessionAttributes().get("senderUserId");
+```
+### 해결 방법 및 과정
+```Java
+// Interceptor에서 userId를 넣어주는 방법
+accessor.getSessionAttributes().put("userId", dto.userId());
+
+
+// 아래와 같이 접근 하게 된다.
+sessions.put(sessionId, (String) accessor.getSessionAttributes().get("userId"));
+```
+addNativeHeader를 이용해서 헤더에 추가를 하면 STMOP 메시지의 헤더에 저장이 된다. 그러나 native header는 자동으로 WebSocket session의 attributes에 복사되거나 매핑되지 않습니다
+따라서 sessionAttributes를 사용해서 전달하는 방식으로 처리할 수 있다.
+
+### Header의 특징
+- **Native Header의 특성**  
+	STOMP 프로토콜에서 native header는 클라이언트가 처음에 전송한 헤더를 의미하며, 이 값들은 메시지 변환 시점에 파싱되고 그 상태로 어플리케이션에 전달됩니다. interceptor나 특정 이벤트에서 `setNativeHeader("userId", "Hello world")`로 값을 추가하더라도 이 변경 사항은 현재 메시지 처리 흐름 내에서만 적용되고, 이후 컨트롤러에 도달하는 별도의 메시지 accessor에는 반영되지 않습니다.
+    
+- **메시지 재구성**  
+    WebSocket 메시지는 내부적으로 여러 단계의 변환 과정을 거치며, interceptor에서 수정한 header 값은 최초 CONNECT 프레임에서만 유효합니다. 즉, 컨트롤러로 도달하는 메시지는 클라이언트가 전송한 원본 header와 새로운 어태치먼트가 합쳐진 형태로 변환되기 때문에 interceptor에서 임의로 추가한 native header는 사라집니다.
