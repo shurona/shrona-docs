@@ -230,6 +230,35 @@ public Message<?> preSend(Message<?> message, MessageChannel channel) {
 >- DISCONNECT: 연결 종료.
 >- ... 이외에도 더 있다.
 
+## 인터셉터와 EventHandler의 우선 순위
+아래와 같이 접속 시 구분하는 코드가 있다고 했을 때
+```Java
+// 인터셉터로 소켓 연결 확인
+@RequiredArgsConstructor  
+@Component  
+public class UserChatRoomJwtInterceptor implements ChannelInterceptor {
+
+	@Override  
+	public Message<?> preSend(Message<?> message, MessageChannel channel) {
+		StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);  
+  
+		// 접속할 때에만 token 검증  
+		if (StompCommand.CONNECT.equals(accessor.getCommand())) {
+			...
+		}
+	}
+
+}
+
+// 이벤트 리스터로 소켓 연결 확인
+@EventListener(SessionConnectEvent.class)  
+public void onConnect(SessionConnectEvent event) {  
+    StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage()); 
+    ...
+    }  
+}
+```
+`ChannelInterceptor`와 `@EventListener(SessionConnectEvent.class)`를 사용해서 소켓이 연결 되었을 때 어떤 부분이 먼저 호출되는지 확인해 본 결과 `ChannelInterceptor`가 먼저 호출되는 것을 확인할 수 있었다.   
 # 소켓 에러 핸들링
 # 적용 중에 발생한 문제
 ## STOMP 헤더에 addNativeHeader를 추가했는데 controller에서 못차는 경우
