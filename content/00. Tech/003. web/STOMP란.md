@@ -8,7 +8,7 @@ tags:
 STOMP(Simple Text Oriented Messaging Protocol)은 scripting 언어를 위해 enterprise message brokers에 연결하기 위해서 만들어 졌다. 
 >enterprise message brokers란<br/> 대규모 엔터프라이즈 시스템에서 애플리케이션 간 메시지 기반 통신을 관리하는 미들웨어
 
-일반적으로 사용되는 메시징 페턴의 최소한의 subset을 해결하도록 설계되어 있다.   
+일반적으로 사용되는 메시징 패턴의 최소한의 subset을 해결하도록 설계되어 있다.   
 STOMP는 TCP와 WebSocket과 같은 신뢰할 수 있는 양방향 스트리밍 네트워크 프로토콜에서 사용할 수 있습니다.   
 또한 STOMP는 텍스트 기반의 프로토콜이지만 binary일 수도 있습니다.
 
