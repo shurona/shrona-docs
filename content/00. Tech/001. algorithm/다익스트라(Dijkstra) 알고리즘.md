@@ -42,6 +42,7 @@ Queue<Node> queue = new PriorityQueue<>(((o1, o2) -> o1.value - o2.value));
 while (!queue.isEmpty()) {  
 	Node current = queue.poll();  
 
+	// 현재 노드가 방문한 노드와 같으면 멈춘다.
 	if (current.dist == nodeCt) {  
 		break;  
 	}  
