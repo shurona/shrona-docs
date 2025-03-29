@@ -15,32 +15,30 @@ tags:
     4. AfterRunning
     5. AfterThrowing
 
-### 포인트컷
+## 포인트컷
 
 - 포인트컷 Expression Languare
 
 포인트 컷을 사용해서 적용 될 위치를 지정할 수 있다.
-
-1. 위치를 지정해서 적용
-
+### AOP를 적용하기 위한 위치 지정
+#### 위치를 지정해서 적용
 ```java
 @Pointcut("execution(* com.domain_expansion.integrity.slack.presentation.*.*(..))")
 ```
-
-1. annotation을 생성해서 원하는 위치로 적용
-
+#### annotation을 생성해서 원하는 위치로 적용
 아래와 같이 임의의 annotation을 만든 다음에 해당 위치에 미리 넣어놓는다.
 
 ```java
-@DefaultPageSize
+  @DefaultPageSize
   @GetMapping
   public SuccessResponse<?> findSlackMessageList(
       @PageableDefault(value = 10, size = 10, page = 0) Pageable pageable
   ) {
-}
+	  ...
+  }
 ```
 
-그 후에 아래와 같이 aop를 적용 하면
+### AOP의 구현
 
 ```java
 @Pointcut("@annotation(com.domain_expansion.integrity.slack.common.aop.DefaultPageSize)")
