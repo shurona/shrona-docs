@@ -1,6 +1,7 @@
 ---
 tags:
   - jpa
+  - audit
 ---
 # 영속성 전이
 영속성 전이는 JPA에서 특정 엔티티를 영속 상태로 만들 때 연관된 엔티티도 함께 영속성 상태로 만들고 싶을 때 사용한다.
@@ -47,3 +48,35 @@ class SpringSecurityAuditorAware implements AuditorAware<User> {
 ```
 
 Spring Security에서 제공하는 Authentication object에서 접근해서 UserDetails 인스턴스를 조회해서 알게 된다.
+## Audit을 기록하기 위한 상위 클래스를 만드는 방법
+### 예제
+```Java
+@Getter  
+@MappedSuperclass  
+@EntityListeners(AuditingEntityListener.class)  
+public class BaseEntity {  
+    @Column(name = "created_at", updatable = false)  
+    @CreatedDate  
+    protected LocalDateTime createdAt;  
+  
+    @CreatedBy  
+    @Column(updatable = false)  
+    protected String createdBy;  
+  
+    @Column(name = "updated_at")  
+    @LastModifiedDate  
+    protected LocalDateTime updatedAt;  
+  
+    @LastModifiedBy  
+    protected String updatedBy;  
+  
+}
+```
+#### MappedSuperclass
+- 이 클래스는 JPA의 **매핑된 슈퍼클래스**로 정의됩니다.
+- 즉, 이 클래스를 상속받는 엔티티 클래스들은 이 클래스의 필드들을 자신의 테이블에 포함하게 됩니다.
+- 하지만 `BaseEntity` 자체는 테이블로 매핑되지 않습니다.
+#### EntityListeners()
+- Spring Data JPA의 **Audit 기능**을 활성화하기 위해 사용됩니다.
+- `AuditingEntityListener`는 엔티티가 저장되거나 업데이트될 때, 자동으로 생성자와 수정자 정보를 기록합니다.
+- 이를 통해 `@CreatedDate`, `@CreatedBy`, `@LastModifiedDate`, `@LastModifiedBy`와 같은 어노테이션이 동작하게 됩니다.
