@@ -4,7 +4,6 @@ tags:
   - restTemplate
   - webClient
 ---
-
 # 외부 API를 위한 통신 방법
 ## RestTemplate
 외부 통신을 위한 API로 동기방식으로 동작하며 HTTP 메서드별로 getForObject(), postForEntity() 등 구체적인 메서드를 호출하여 요청을 보내게 된다.

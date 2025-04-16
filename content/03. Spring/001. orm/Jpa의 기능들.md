@@ -80,3 +80,42 @@ public class BaseEntity {
 - Spring Data JPA의 **Audit 기능**을 활성화하기 위해 사용됩니다.
 - `AuditingEntityListener`는 엔티티가 저장되거나 업데이트될 때, 자동으로 생성자와 수정자 정보를 기록합니다.
 - 이를 통해 `@CreatedDate`, `@CreatedBy`, `@LastModifiedDate`, `@LastModifiedBy`와 같은 어노테이션이 동작하게 됩니다.
+# `Embedded`와 `Embeddable`이란
+## Embeddable 정의
+`@Embeddable`은 값 타입(VO, Value Object) 클래스를 정의할 때 사용하는 어노테이션이다.   
+이 어노테이션이 붙은 클래스는 엔티티의 일부(속성)로 저장되며, 자체적으로 테이블을 만들지 않고, 엔티티의 테이블에 컬럼으로 포함이 된다.
+### 예시
+```Java
+@Embeddable
+public class Address {
+    private String city;
+    private String street;
+    private String zipcode;
+    // 생성자, getter 등
+}
+```
+## Embedded 정의
+`@Embedded`는 **엔티티의 필드**에 붙여, 해당 필드가 `@Embeddable`로 정의된 값 타입임을 명시한다.   
+이 필드는 엔티티의 테이블에 컬럼으로 포함되어 저장됩니다
+### 예시
+Address의 필드(city, street, zipcode)가 User 테이블에 컬럼으로 표시되어서 저장된다.
+```java
+@Entity
+public class User {
+    @Id
+    private Long id;
+    private String name;
+
+    @Embedded
+    private Address address; 
+}
+
+```
+### 특징
+- 불변 객체 권장 
+	- 값 타입은 불변(immutable)으로 설계하는 것이 좋으며, setter를 두지 않는 것이 일반적입니다
+- 임베디드 값의 내부 필드 변경만으로는 JPA가 변경을 감지하지 못할 수 있다. 
+	- 값 객체는 불변으로 만들고 새 객체로 교체하는 방식이 권장됩니다
+>  ### @NoArgsConstructor(access = AccessLevel.PROTECTED)
+>	- JPA Entity 요구사항: JPA에서 엔티티 클래스를 사용할 때 기본 생성자가 반드시 필요하다
+>	- 다만 무분별한 객체의 생성을 방지하기 위해서 `PROTECTED`로 선언해준다.

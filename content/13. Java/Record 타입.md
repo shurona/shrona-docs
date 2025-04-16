@@ -1,3 +1,8 @@
+---
+tags:
+  - Record
+---
+
 [공식문서]([https://docs.oracle.com/en/java/javase/14/language/records.html](https://docs.oracle.com/en/java/javase/14/language/records.html))
 ## 개념
 Java 14에 추가된 기능으로 새로운 타입 선언자이다. Record는 Enum 처럼 class의 제한된 형태이다. 이것은 이상적인 목적으로 “plain data carriers” 이며 클래스는 변경할 수 없는 데이터와 생성자 및 접근자와 같은 가장 기본적인 메서드만 제공합니다.
