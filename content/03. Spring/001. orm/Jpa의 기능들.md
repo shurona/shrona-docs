@@ -2,6 +2,8 @@
 tags:
   - jpa
   - audit
+  - embedded
+  - vo
 ---
 # 영속성 전이
 영속성 전이는 JPA에서 특정 엔티티를 영속 상태로 만들 때 연관된 엔티티도 함께 영속성 상태로 만들고 싶을 때 사용한다.
@@ -32,6 +34,8 @@ Spring Data Jpa에서 시간에 대해서 자동으로 값을 넣어주는 기�
 - `@EntityListners(AuditingEntityListener.class)`
 ## AuditorAware
 `@CreatedBy` 또는 `@LastModifiedBy` 를 사용하기 위해서는 audit infrastructure에서 현재 principal을 인식해야할 필요가 있다. ⇒ 그것을 위해 사용하는 것이 `AuditAware<T>`
+
+### SpringSecurity 에서 Audit User 찾기
 ```Java
 class SpringSecurityAuditorAware implements AuditorAware<User> {
 
@@ -48,6 +52,46 @@ class SpringSecurityAuditorAware implements AuditorAware<User> {
 ```
 
 Spring Security에서 제공하는 Authentication object에서 접근해서 UserDetails 인스턴스를 조회해서 알게 된다.
+
+### Request에서 Audit User 찾기
+```Java
+public class RequestUserJpaAuditConfig implements AuditorAware<String> {  
+  
+    @Override  
+    public Optional<String> getCurrentAuditor() {  
+  
+        ServletRequestAttributes attributes  
+            = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();  
+  
+        //TODO: null일 때 어떻게 처리해야 하지  
+        String userId = null;  
+        if (attributes != null) {  
+            HttpServletRequest request = attributes.getRequest();  
+            String userIdHeader = request.getHeader(X_USER_ID);  
+            if (userIdHeader != null) {  
+                userId = userIdHeader;  
+            }  
+        }  
+  
+        return Optional.ofNullable(userId);  
+    }  
+}
+```
+1. **요청 컨텍스트 조회**  
+    `RequestContextHolder`에서 현재 요청 정보(`ServletRequestAttributes`)를 가져옵니다.  
+    → **주의**: 웹 컨텍스트가 아닌 경우(예: 배치 작업) `attributes`가 `null`일 수 있습니다.
+2. **HTTP 요청 객체 추출**  
+    웹 요청이 존재하는 경우(`attributes != null`), `HttpServletRequest`를 가져옵니다.
+3. **헤더에서 사용자 ID 추출**  
+    `X_USER_ID` 헤더 값을 읽어 `userId` 변수에 저장합니다.  
+    → 헤더가 없는 경우 `userId`는 `null`이 됩니다.
+4. **결과 반환**  
+    `userId`를 `Optional`로 감싸서 반환한다.
+    → `userId`가 `null`이면 `Optional.empty()`가 반환된다.
+#### 문제 가능성
+Batch Job과 같이 웹 요청이 아닌 경우에는 null일 수 있다.   
+null인 경우에는 기본값이나 Annonymous와 같이 처리가 가능할 수 있다.
+
 ## Audit을 기록하기 위한 상위 클래스를 만드는 방법
 ### 예제
 ```Java
