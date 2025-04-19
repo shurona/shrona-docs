@@ -5,7 +5,7 @@ DataJpaTest는 기본적으로 Jpa에 관련된 Bean만 활성화 되고 Service
 # DB를 사용한 인증 Flow
 
 ```Java
-@DataJpaTest  
+@DataJpaTest
 class AuthServiceImplTest {  
   
 	...
