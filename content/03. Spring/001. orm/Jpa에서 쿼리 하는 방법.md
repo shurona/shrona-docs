@@ -117,3 +117,24 @@ List<Friend> findFriendWithUserDetailAndFetch(@Param("detail") String detail);
 - 동적인 쿼리 작성이 필요한 경우(예: 특정 조건에서만 join), Criteria나 QueryDSL 없이도 바로 표현할 수 있다.
 ### 단점
 - 쿼리 문자열이 길고 복잡해지기 쉽고, 여러 연관을 FETCH JOIN 하면 중복된 루트 결과 처리를 위해 DISTINCT를 추가해야 할 수도 있습니다.
+# 코드적 트러블 슈팅
+## 지속적인 validation 에러
+### 원인
+아래와 같이 Method를 이용한 방식과 @query를 이용한 방식을 사용해서 쿼리를 두 가지 방식으로 작성하였다.
+```Java
+@Query("SELECT f FROM friend f WHERE f.user = :user AND f.request = :request")  
+    List<Friend> findUserListByUserAndRequest(@Param("user") User user, @Param("request") FriendRequest request);  
+  
+  
+List<Friend> findUserListByUserAndRequest(User user, FriendRequest request);
+```
+그런데 메소드 방식은 문제가 없었으나 @Query를 사용해서 구현을 할 경우 아래와 같은 에러가 지속적으로 발생하였다.
+```Java
+Reason: Validation failed for query for method public abstract
+```
+### 해결
+**테이블의 알파벳 대소문자**를 지켜서 `@Query`를 작성해야 했다.
+```Java
+// 기존에는 대문자로 적었으나 소문자로 적었어야 했다.
+Friend => friend
+```
