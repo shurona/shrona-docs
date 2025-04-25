@@ -36,7 +36,7 @@ tags:
 
 # 센티널 설정파일
 ```Text
-// 일반적인 예시
+// 일반적인 예시
 sentinel monitor mymaster 127.0.0.1 6379 2
 sentinel down-after-milliseconds mymaster 60000
 sentinel failover-timeout mymaster 180000
