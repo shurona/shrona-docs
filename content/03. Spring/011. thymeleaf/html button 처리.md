@@ -12,7 +12,7 @@ tags:
 </button>
 ```
 ## `document.querySelectorAll`을 사용
-querySelectAll을 사용해서 
+querySelectAll을 사용해서 해당 태그들을 저장해서 클릭이 되었을 때 특정 함수를 호출한다.
 ```javascript
 document.querySelectorAll('.btn-trash').forEach(function(btn) {  
   btn.addEventListener('click', function() {  
@@ -20,7 +20,12 @@ document.querySelectorAll('.btn-trash').forEach(function(btn) {
   });  
 });
 ```
+### 작동원리
+- `document.querySelectorAll('.btn-trash')`는 현재 DOM에서 `.btn-trash` 클래스를 가진 모든 요소를 한 번에 찾아서 정적(Static) NodeList로 반환한다.
+- 이 NodeList는 배열처럼 반복이 가능한 객체이지만, 실시간으로 DOM 변화를 반영하지는 않습니다. 즉, 이 시점에 존재하는 `.btn-trash` 요소들의 참조만을 가지고 있다.
+- `forEach`를 통해 각 버튼에 이벤트 리스너(addEventListener)로 등록함으로써 메모리로 저장한다.
 ## button에서 `onclick()` 사용
+button 태그에서 `onclick()` 함수를 사용해서 javascript에서 코드를 호출한다.
 ### `th:onclick` 사용
 ```html
 <button class="btn btn-icon btn-trash"
