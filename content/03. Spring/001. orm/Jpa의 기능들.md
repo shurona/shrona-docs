@@ -12,8 +12,11 @@ tags:
 ### Cascade 종류
 - ALL
 - PERSIST
+	- 부모 엔티티가 저장될 때 자식 엔티티도 함께 저장
 - REMOVE
+	- 부모 엔티티가 삭제될 때 자식 엔티티도 함께 삭제
 - MERGE
+	- 부모 엔티티가 merge될 때 자식 엔티티도 함께 merge
 - REFRESH
 - DETACH
 
