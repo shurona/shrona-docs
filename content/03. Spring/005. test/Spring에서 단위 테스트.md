@@ -5,13 +5,13 @@ tags:
   - test
   - mockito
 ---
-## 사용하는 라이브러리
+# 사용하는 라이브러리
 - Junit5
 	- 자바 단위 테스트를 위한 테스트 프레임워크
 - AssertJ
 	- 자바 테스트를 돕기 위해 다양한 문법을 지원하는 라이브러리
 
-## given when then
+# given when then
 
 - given
 	- 데이터의 준비 과정
@@ -43,7 +43,7 @@ assertThat(quizInfo.getQuizDetails().size()).isEqualTo(10);
 assertThat(quizInfo.getUser().getId()).isEqualTo(user.getId());
 ```
 
-## Mockito
+# Mockito
 Mockito는 자바 언어를 사용하는 소프트웨어 개발자들이 단위 테스트를 작성하는 데 사용하는 오픈 소스 프레임워크이다. 
 Mock이 필요한 테스트에 직관적으로 사용할 수 있도록 만들어졌습니다.
 
@@ -63,7 +63,7 @@ Mock이 필요한 테스트에 직관적으로 사용할 수 있도록 만들어
 테스트 도중에 호출 될 메서드 들에 대해서 미리 답변을 준비해 놓는 것을 의미한다.   
 즉 mock객체의 메소드를 호출했을 때 어떤 값을 리턴할 지 미리 정해놓는 것이다.
 
-#### 주요 메서드
+## 주요 메서드
 - doReturn()
 	- 특정 값을 반환해야 하는 경우
 - doNothing()
@@ -81,7 +81,7 @@ doReturn(new CommonResponse<RiderResponseDto>(200, "메시지", givenRider))
     .when(riderClient).authRider(requestDto);
 ```
 
-#### 두 방식의 차이점
+## 두 방식의 차이점
 
 | 특징        | when(...).thenReturn(...) | doReturn(...).when(...)               |
 | --------- | ------------------------- | ------------------------------------- |
@@ -90,7 +90,7 @@ doReturn(new CommonResponse<RiderResponseDto>(200, "메시지", givenRider))
 | 예외 발생 가능성 | 실제 메서드 호출 시 예외 발생 가능      | 메서드를 호출하지 않으므로 예외 발생하지 않음             |
 | 사용 가능 범위  | 일반 메서드                    | final, private, void 메서드에도 사용 가능      |
 | 실행 시점     | 메서드가 실제 호출될 때 Stub 설정     | Stub 설정 시점에 메서드를 실행하지 않음              |
-### Spring에서 사용 방법
+## Spring에서 사용 방법
 아래와 같이 테스트 할 클래스의 어노테이션으로 붙여주면 된다.
 ```Java
 @ExtendWith(MockitoExtension.class)  
@@ -99,7 +99,7 @@ class 테스트_클래스_이름 {
 }
 ```
 
-### 공통 적용 사항
+## 공통 적용 사항
 테스트를 원하는 RiderAuthServic는 InjectsMock으로 주입해준다.   
 외부 서비스를 활용해야 하는 RiderClient 및 RedisUtils는 Mock을 이용한다.  
 다른 외부 서비스를 사용하지 않는 JwtTokenService는 Spy를 써서 기존 로직을 이용한다.  

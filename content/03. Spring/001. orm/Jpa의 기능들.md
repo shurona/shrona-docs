@@ -166,3 +166,47 @@ public class User {
 >  ### @NoArgsConstructor(access = AccessLevel.PROTECTED)
 >	- JPA Entity 요구사항: JPA에서 엔티티 클래스를 사용할 때 기본 생성자가 반드시 필요하다
 >	- 다만 무분별한 객체의 생성을 방지하기 위해서 `PROTECTED`로 선언해준다.
+
+# Jpa를 사용해서 row 삭제
+## 삭제 방법
+### 메소드 사용
+```Java
+// deleteById 메소드 예시 
+repository.deleteById(1L);
+
+// deleteAllByIdIn 메소드 예시 List<Long> ids = Arrays.asList(1L, 2L, 3L);  
+repository.deleteAllByIdIn(ids);  
+```
+### @Query 어노테이션 사용
+```Java
+// @Query 어노테이션을 활용한 삭제 예시  
+@Query("delete from Member m where m.name = ?1") @Modifying void deleteByName(String name);
+```
+## 발생한 문제
+- 연관된 자식 엔티티가 삭제되지 않아서 삭제 쿼리가 날라가지 않는 현상 발생
+### 예제
+- 아래와 같이 User와 Board Entity가 있다고 가정하면
+```Java
+@Entity
+public class User {
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Board> boards = new ArrayList<>();
+}
+```
+
+```Java
+@Entity
+public class Board {
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User user;
+}
+```
+### 원인
+- 연관된 Board들이 User의 boards 리스트에 그대로 남아 있기 때문이다.
+- JPA는 Board들이 `고아(orphan)`가 아니라고 판단해서 삭제하지 않음.
+### 해결
+- 아래와 같이 삭제를 진행하면 된다.
+```Java
+user.getBoards().clear(); // 양방향 연관관계를 끊음 → orphanRemoval 작동
+userRepository.delete(ids);
+```

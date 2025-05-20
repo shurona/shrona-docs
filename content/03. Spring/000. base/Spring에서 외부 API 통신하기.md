@@ -25,32 +25,43 @@ Http Interface와 연관하기 위해서 아래와 같이 Adpater를 만들어�
 
 #### 적용해본 예시
 ```Java
-// weatherConfig의 base URL을 사용하여 DefaultUriBuilderFactory를 생성하고,
-// URL 인코딩을 수행하지 않도록 설정
-DefaultUriBuilderFactory uriBuilderFactory = new DefaultUriBuilderFactory(
-    weatherConfig.baseurl());
-uriBuilderFactory.setEncodingMode(EncodingMode.NONE);
+@Configuration
+public class WeatherClientAdapter {
+	...
 
-// 생성한 uriBuilderFactory와 로그용 인터셉터(logRequestInterceptor)를 
-// 이용해 RestClient를 빌드하는 예시들
-RestClient restClient = RestClient.builder()  
-    .baseUrl(deeplBaseUrl)  
-    .requestInterceptor(restClientInterceptor())  
-    .defaultHeaders(headers -> {  
-        headers.set("Authorization", "DeepL-Auth-Key " + apiKeyUTF8);  
-        headers.setContentType(MediaType.APPLICATION_JSON);  
-    })  
-    .build();
+	@Bean
+	public WeatherClient weatherRestClient(){
+		// weatherConfig의 base URL을 사용하여 DefaultUriBuilderFactory를 생성하고,
+		// URL 인코딩을 수행하지 않도록 설정
+		DefaultUriBuilderFactory uriBuilderFactory = new DefaultUriBuilderFactory(
+		    weatherConfig.baseurl());
+		uriBuilderFactory.setEncodingMode(EncodingMode.NONE);
+		
+		// 생성한 uriBuilderFactory와 로그용 인터셉터(logRequestInterceptor)를 
+		// 이용해 RestClient를 빌드하는 예시들
+		RestClient restClient = RestClient.builder()  
+		    .baseUrl(deeplBaseUrl)  
+		    .requestInterceptor(restClientInterceptor())  
+		    .defaultHeaders(headers -> {  
+		        headers.set("Authorization", "DeepL-Auth-Key " + apiKeyUTF8);  
+		        headers.setContentType(MediaType.APPLICATION_JSON);  
+		    })  
+		    .build();
+		
+		// RestClient를 어댑터로 감싸서 HttpServiceProxyFactory에 사용할 수 있도록 변환
+		RestClientAdapter adapter = RestClientAdapter.create(restClient);
+		
+		// 어댑터를 기반으로 HTTP 서비스 프록시 팩토리를 빌드
+		HttpServiceProxyFactory factory = HttpServiceProxyFactory.builderFor(adapter).build();
+		
+		// WeatherClient 인터페이스에 대한 HTTP 클라이언트 프록시를 생성하여, 
+		// 이후 WeatherClient의 메서드 호출 시 REST API 호출이 수행되도록 함
+		factory.createClient(WeatherClient.class);
+	}
 
-// RestClient를 어댑터로 감싸서 HttpServiceProxyFactory에 사용할 수 있도록 변환
-RestClientAdapter adapter = RestClientAdapter.create(restClient);
+	...
 
-// 어댑터를 기반으로 HTTP 서비스 프록시 팩토리를 빌드
-HttpServiceProxyFactory factory = HttpServiceProxyFactory.builderFor(adapter).build();
-
-// WeatherClient 인터페이스에 대한 HTTP 클라이언트 프록시를 생성하여, 
-// 이후 WeatherClient의 메서드 호출 시 REST API 호출이 수행되도록 함
-factory.createClient(WeatherClient.class);
+}
 ```
 
 위에서 Adapter와 함께 RestClient를 Http Interface와 연결을 시킨 다음에는 아래와 같이 함수 형식으로 선언이 가능하다. 또한 RequestParam이나 PathVaraible로 Request를 전송할 때 변수들을 선언해 줄 수 있다.
@@ -66,7 +77,8 @@ public interface WeatherClient {
         @RequestParam("serviceKey") String serviceKey,
         @RequestParam("base_date") String baseDate,
         @RequestParam("nx") String nx,
-        @RequestParam("ny") String ny
+        @RequestParam("ny") String ny,
+        @RequestBody RequestType requestBody
     );
 
 }
@@ -81,6 +93,10 @@ WeatherResponse weatherInfo
 = weatherClient.findWeatherInfo(weatherConfig.key(), today,  x, y);
 ```
 
+#### ProxyFactory란
+- 자바 인터페이스 기반으로 실제 HTTP API 호출을 처리할 수 있는 프록시(대리 객체)를 생성하는 팩토리
+- 이 프록시를 통해 개발자는 마치 로컬 메서드를 호출하듯이 외부 HTTP API를 쉽게 사용가능
+- 내부적으로 RestClient, WebClient 등 다양한 HTTP 클라이언트와 연동이 가능
 ## RestClient 적용 이후 문제 발생했던 점
 ### 보내는 URL 확인
 

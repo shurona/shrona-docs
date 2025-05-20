@@ -1,3 +1,8 @@
+---
+tags:
+  - datajpatest
+---
+
 Spring부트에서는 DataJpaTest어노테이션을 사용하면 간단하게 테스트가 가능하다
 H2의 메모리를 사용하므로 Docker를 사용한다거나 하는 식으로 테스트용 데이터베이스를 구축할 필요가 없다.
 DataJpaTest는 기본적으로 Jpa에 관련된 Bean만 활성화 되고 Service와 같은 다른 계층은 로드되지 않는다.

@@ -30,3 +30,28 @@ public class UserPhoneNumber {
     }
 }
 ```
+# ValueObject의 비교
+## 두 VO를 비교할 때 발생한 문제
+PhoneNumber 같은 값 객체(Value Object)를 `List.contains(...)` 등에서 비교하려 했지만 equals와 같은 객체가 없으면 참조(주소)로만 비교가 되기 때문에 같은 전화번화 문자열을 갖고 있는 객체라도 false를 반환하게 된다.   
+## 해결방법
+아래와 같이 equals와 hashCode 코드를 만들어주면 된다.
+```Java
+@Override
+public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    PhoneNumber that = (PhoneNumber) o;
+    return Objects.equals(getPhoneNumber(), that.getPhoneNumber());
+}
+
+@Override
+public int hashCode() {
+    return Objects.hash(getPhoneNumber());
+}
+```
+### 비교 순서
+- hashCode() 호출
+	- equals를 호출하기 전에 hashCode를 호출해서 같은 hashcode를 갖고 있는지 확인한다.
+- equals() 호출
+	- 내부 equals 로직을 조사해서 두 객체의 비교를 진행한다.
+	- 위의 예시는 클래스 및 내부의 `get`함수를 이용해서 두 객체의 비교를 진행한다.
