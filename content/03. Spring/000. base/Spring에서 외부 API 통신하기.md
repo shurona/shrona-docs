@@ -20,9 +20,31 @@ WebFlux에서 제공하는 HTTP 클라이언트로, 비동기적으로 Non-block
 
 위의 문제를 해결하기 위해서 Spring 5.0에서 나온 것이 WebClient이다. 하지만 WebClient는 webflux아래에서 돌아가게 되어서 기본적으로 MVC로 동작하는 spring에서 WebClient를 사용하기 위해서 webflux의 모든 의존성을 추가해야 하는 단점이 있다.
 ### Http Interface
+#### Interface를 사용하는 이유
+- HTTP 요청을 자바 인터페이스와 어노테이션만으로 선언하고
+- Spring이 런타임에 프록시 객체를 생성해서
+- HTTP 요청을 자동 처리하도록 해준다.
 Http 요청을 위한 서비스를 자바 인터페이스와 어노테이션으로 정의 할 수 있도록 도와주는 역할이다.   
 Http Interface와 연관하기 위해서 아래와 같이 Adpater를 만들어셔 연동시켜준다.
 
+### 프록시 생성 과정
+- 메서드 호출을 가로채고
+- 어노테이션 정보를 기반으로
+- **HTTP 요청**을 전송한다.
+### Adapter로 연동하기
+#### 개념
+- RestClientAdapter는 RestClient를 HTTP 서비스 프록시 생성기에 연결해주는 어댑터다.
+#### 적용되는 과정
+- RestClient
+	- 네트워크 요청을 날릴 수 있는 HTTP Client
+- HttpServiceProxyFactory
+	- 인터페이스(HttpExchange)를 보고 동적으로 구현체를 만들 Proxy Generator
+- RestClientAdapter
+	- RestClient를 HttpServiceProxyFactory가 이해할 수 있도록, HttpServiceProxyConfigurer 인터페이스로 어댑팅하는 역할
+#### ProxyFactory란
+- 자바 인터페이스 기반으로 실제 HTTP API 호출을 처리할 수 있는 프록시(대리 객체)를 생성하는 팩토리
+- 이 프록시를 통해 개발자는 마치 로컬 메서드를 호출하듯이 외부 HTTP API를 쉽게 사용가능
+- 내부적으로 RestClient, WebClient 등 다양한 HTTP 클라이언트와 연동이 가능
 #### 적용해본 예시
 ```Java
 @Configuration
@@ -92,11 +114,6 @@ private final WeatherClient weatherClient;
 WeatherResponse weatherInfo 
 = weatherClient.findWeatherInfo(weatherConfig.key(), today,  x, y);
 ```
-
-#### ProxyFactory란
-- 자바 인터페이스 기반으로 실제 HTTP API 호출을 처리할 수 있는 프록시(대리 객체)를 생성하는 팩토리
-- 이 프록시를 통해 개발자는 마치 로컬 메서드를 호출하듯이 외부 HTTP API를 쉽게 사용가능
-- 내부적으로 RestClient, WebClient 등 다양한 HTTP 클라이언트와 연동이 가능
 ## RestClient 적용 이후 문제 발생했던 점
 ### 보내는 URL 확인
 

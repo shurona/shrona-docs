@@ -22,4 +22,4 @@ const roomId = [[${header.id}]];
 ```Javascript
 const username = '[[${header.username}]]';
 ```
-
+# 에러 처리
