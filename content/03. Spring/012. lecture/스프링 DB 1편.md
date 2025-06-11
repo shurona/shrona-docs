@@ -162,3 +162,47 @@ insert into member(member_id, money) values ('memberA',10000);
 set autocommit false;
 select * from member where member_id='memberA' for update;
 ```
+## 트랜잭션 적용해보기
+- 비즈니스 로직이 전체가 트랜잭션이 걸려야 하기 때문에 서비스 레이어에서 시작을 해야 한다.
+- 애플리케이션에서 트랜잭션을 사용하려면 트랜잭션을 사용하는 동안 같은 커넥션을 유지해야 한다.
+# 스프링 안에서 트랜잭션과 문제 해결
+## 기존에 트랜잭션 사용 시 문제
+- 비즈니스 로직은 최대한 변경 없이 유지되어야 한다. 이렇게 하려면 특정 기술에 종속적이지 않게 개발해야한다. 하지만 트랜잭션은 서비스 레이어에서 시작해야 하기 때문에 서비스 계층에 해당 기능이 존재하게 된다.
+- 예외 처리가 JDBC의 의존하는 전영 기술인데 향후 JPA와 같은 다른 기술로 변경 시 그에 맞는 예외 처리로 변경해야 한다.
+- JDBC는 유사한 코드의 반벅이 너무 많다.
+	- try, catch, final
+	- 지속적으로 커넥션을 열고 닫는 코드가 반복된다.
+## 트랜잭션의 추상화
+### 트랜잭션의 기본 기능
+- 우리가 하고자 하는 추상화
+```Java
+public interface TxManager {
+	begin();
+	commit();
+	rollback();
+}
+```
+- Spring 트랜잭션 추상화
+```Java
+public interface PlatformTransactionManager extends TransactionManager {  
+    TransactionStatus getTransaction(@Nullable TransactionDefinition definition) throws TransactionException; 
+    void commit(TransactionStatus status) throws TransactionException;   
+    void rollback(TransactionStatus status) throws TransactionException;  
+}
+```
+## 트랜잭션 동기화
+### 커넥션 보관
+- 스프링은 트랜잭션 동기화 매니저를 제공한다.
+- 이것은 쓰레드 로컬을 사용해서 커넥션을 동기화 해준다.
+- 트랜잭션 매니저는 내부에서 이 동기화 매니저를 사용한다.
+### 커넥션 사용
+- 트랜잭션 동기화 매니저는 쓰레드 로컬을 사용하기 때문에 멀티 쓰레드 환경에서 안전하게 커넥션을 동기화 할 수 있다. 
+- 커넥션이 필요하면 트랜잭션 동기화 매니저를 통해서 커넥션을 획득하게 된다.
+### 동작 방식
+- 트랜잭션을 시작하기 위해서 커넥션이 필요하다.
+  트랜잭션 매니저는 데이터소스를 통해 커넥션을 만들고 트랜잭션을 시작한다.
+- 트랜잭션 매니저는 트랜잭션이 시작된 커넥션을 **트랜잭션 동기화 매니저**에 보관한다.
+  `org.springframework.transaction.support.TransactionSynchronizationManager`
+- 리포지토리는 **트랜잭션 동기화 매니저**에 보관된 커넥션을 꺼내서 사용한다.
+  파라미터로 커넥션을 전달할 필요가 없음.
+- 트랜잭션이 종료되면 트랜잭션 매니저는 트랜잭션 동기화 매니저에 보관된 커넥션을 통해 트랜잭션을 종료하고 커넥션도 종료한다.
