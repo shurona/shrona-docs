@@ -206,3 +206,122 @@ public interface PlatformTransactionManager extends TransactionManager {
 - 리포지토리는 **트랜잭션 동기화 매니저**에 보관된 커넥션을 꺼내서 사용한다.
   파라미터로 커넥션을 전달할 필요가 없음.
 - 트랜잭션이 종료되면 트랜잭션 매니저는 트랜잭션 동기화 매니저에 보관된 커넥션을 통해 트랜잭션을 종료하고 커넥션도 종료한다.
+## 트랜잭션 매니저 적용
+- 트랜잭션 DataSource의 connection을 갖고 온다.
+	- 트랜잭션 동기화 매니저가 관리하는 커넥션이 있으면 해당 커넥션을 반환한다.
+	- 만약 커넥션이 없으면 새로운 커넥션을 생성해서 반환한다.
+```Java
+private Connection getConnection() throws SQLException {   
+    // 주의! 트랜잭션 동기화를 사용하려면 DataSourceUtils를 사용해야 한다.  
+    Connection con = DataSourceUtils.getConnection(dataSource);  
+    log.info("get connection={}, class={}", con,  
+        con.getClass());  
+    return con;  
+}
+```
+- 트랜잭션 동기화를 사용할 때 release 하는 방법
+	- 커넥션을 닫아버리면 안되고 롤백이나 커밋 할 때까지 살아있어야 한다.
+	- 따라서 바로 닫아버리지 않고 그대로 유지해준다
+```Java
+private void close(Connection con, Statement stmt, ResultSet rs) {  
+    JdbcUtils.closeResultSet(rs);  
+    JdbcUtils.closeStatement(stmt);  
+    DataSourceUtils.releaseConnection(con, dataSource);  
+}
+```
+## 트랜잭션 상세 순서
+1. 클라이언트 요청으로 서비스 로직을 싱행
+2. 서비스 계층에서 `transactionManager.getTransaction()`을 호출해서 트랜잭션을 실행한다.
+3. 트랜잭션은 먼저 데이터베이스 커넥션이 필요하다. 
+   트랜잭션 매니저는 내부에서 데이터 소스를 사용해서 커넥션을 생성한다.
+4. 커넥션을 수동 커밋 모드로 변경해서 실제 데이터베이스 트랜잭션을 시작한다.
+5. 커넥션을 트랜잭션 동기화 매니저에서 보관한다.
+6. 트랜잭션 동기화 매니저는 쓰레드 로컬에 보관한다.
+   멀티 쓰레드 환경에서 안전하게 커넥션을 보관할 수 있다.
+7. 서비스는 비즈니스 로직을 실행하면서 리포지토리의 메소드들을 호출한다.
+8. 리포지토리 메서드들은 트랜잭션이 시작된 커넥셔닝 필요하다.
+   리포지토리는 `DataSourceUtils.getConnection()`을 사용해서 트랜잭션 동기화 매니저에 보관된 커넥션을 갖고 와서 사용한다.
+   이 과정에서 같은 커넥션을 사용하고 트랜잭션이 유지가 된다.
+9. 위에서 획득한 커넥션을 사용해서 SQL을 데이터베이스에 전달한다.
+10. 비즈니스 로직이 끝나면 트랜잭션을 종료한다.(커밋 or 롤백)
+11. 트랜잭션을 종료하려면 동기화된 커넥션이 필요하다.
+    트랜잭션 동기화 매니저를 통해서 동기화된 커넥션을 획득한다.
+12. 획득한 커넥션을 통해 데이터베이스에 트랜잭션을 커밋하거나 롤백한다.
+13. 전체 리소스를 정리한다.
+	1. 트랜잭션 동기화 매니저를 정리한다.(쓰레드 로컬을 사용 후 꼭 정리해야 한다.)
+	2. `con.setAutoCommit(true)`로 되돌린다.
+## 트랜잭션 템플릿
+try-catch와 같은 구문이 반복되는 구조를 막기 위해서 트랜잭션 템플릿이라는 클래스를 스프링이 제공해준다.
+```Java
+public class TransactionTemplate {
+	private PlatformTransactionManager transactionManager;
+	
+	public <T> T execute(TransactionCallback<T> action){..}
+	void executeWithoutResult(Consumer<TransactionStatus> action){..}
+}
+```
+- execute()
+	- 응답값이 있을 때 사용
+- executeWithoutResult
+	- 응답값이 없을 때 사용
+## 트랜잭션 AOP
+- 프록시를 도입 한 후에는 트랜잭션 처리 로직을 서비스에서 추출해서 프록시에서 처리를 하게 된다.
+```mermaid
+flowchart LR
+	A[클라이언트]
+    subgraph 트랜잭션 프록시
+        B1[트랜잭션 시작]
+        B2[트랜잭션 처리 로직]
+        B3[트랜잭션 종료]
+    end
+    subgraph 서비스
+        C1[비즈니스 로직]
+    end
+    subgraph 리포지토리
+        D1[데이터 접근 로직]
+    end
+
+    %% 설명 라벨
+    A ----> B2
+    B2 -- "실제 서비스 호출" --> C1
+	C1 -- "리포지토리 호출" --> D1    
+
+```
+
+### 동작 원리
+```text
+memberService class=class hello.jdbc.service.MemberServiceV3_3$ $EnhancerBySpringCGLIB$$... // spring에서 proxy 형식으로 자체적으로 처리한 클래스
+
+// 아래와 같은 방식으로 AOP proxy 걸렸는데 확인할 수 있다.
+Assertions.assertThat(AopUtils.isAopProxy(memberService)).isTrue();
+```
+먼저 AOP 프록시가 적용되었는지 확인해보자. `AopCheck()` 의 실행 결과를 보면 `memberService` 부분에 `EnhancerBySpringCGLIB..` 라는 부분을 통해 프록시(CGLIB)가 적용된 것을 확인할 수 있다.
+`memberRepository` 에는 AOP를 적용하지 않았기 때문에 프록시가 적용되지 않는다.
+## 스프링 부트의 자동 리소스 등록
+- 데이터 소스와 트랜잭션 매니저를 스프링 빈으로 직접 등록하는 부분
+```Java
+@Bean
+DataSource dataSource() {
+	return new DriverManagerDataSource(URL, USERNAME, PASSWORD);
+}
+
+@Bean
+PlatformTransactionManager transactionManager() {
+	return new DataSourceTransactionManager(dataSource());
+}
+```
+### DataSource 특징
+- 스프링 부트는 데이터소스(`DataSource` )를 스프링 빈에 자동으로 등록한다
+- 스프링 빈 이름 : `dataSource`
+- 개발자가 직접 데이터소스를 빈으로 등록하면 스프링 부트는 데이터소스를 자동으로 등록하지 않는다
+- 부트는 `application.yaml(properties)`에 있는 속성을 갖고 `DataSource`를 생성 후 빈에 등록한다
+### TransactionManager 특징
+- 스프링 부트는 적절한 트랜잭션 매니저(`PlatformTransactionManager` )를 자동으로 스프링 빈에 등록한다
+- 등록되는 스프링 빈 이름: `transactionManager`
+- 개발자가 직접 트랜잭션 매니저를 빈으로 등록하면 스프링 부트는 트랜잭션 매니저를 자동으로 등록하지 않는다.
+- TransactionManager를 등록하는 판단 기준
+	- JDBC를 기술을 사용하면 `DataSourceTransactionManager` 를 빈으로 등록하고, 
+	- JPA를 사용하면 `JpaTransactionManager` 를 빈으로 등록한다. 
+	- 둘다 사용하는 경우 `JpaTransactionManager` 를 등록한다.
+		- `JpaTransactionManager` 는 `DataSourceTransactionManager` 가 제공하는 
+		  기능도 대부분 지원한다
