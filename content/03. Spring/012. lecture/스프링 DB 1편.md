@@ -54,3 +54,111 @@ if (rs.next()) {
     throw new NoSuchElementException("member not found memberId=" + memberId);  
 }
 ```
+# 커넥션 풀
+## 커넥션 풀의 이해
+모든 SQL 요청에 대해서 커넥션을 새로 만들게 될 경우 항상 `TCP/IP` 커넥션을 새로 만들어야 하므로 비효율적이다. 이는 SQL을 실행하는 시간 뿐만 아니라 커넥션을 새로 만드는 시간이 추가 되기 때문에 응답속도에 영향을 주므로 사용자에게 좋지 않은 경험을 줄 수 있다.   
+이 문제를 해결하기 위해 나온 것이 미리 커넥션을 생성해 두고 사용하는 커넥션 풀이라는 방식이다.
+## DataSource 이해
+기존에 DriverManager을 사용하고 있었을 때 HikariCP 커넥션 풀로 변경하려면 커넥션을 획득하는 애플리케이션 코드도 함께 변경을 해야 한다.    
+이런 문제를 해결하기 위해서 커넥션을 획득하는 방법을 추상화 한 것이 `DataSource` 이다. 
+### 핵심 기능
+```Java
+public interface DataSource {
+	Connection getConnection() throws SQLException;
+}
+```
+## DriverManager
+### 기존의 DriverManager 사용
+```Java
+Connection con1 = DriverManager.getConnection(URL, USERNAME, PASSWORD);  
+Connection con2 = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+```
+### DataSource를 사용
+```Java
+DriverManagerDataSource dataSource =  
+    new DriverManagerDataSource(URL, USERNAME, PASSWORD);
+
+Connection con1 = dataSource.getConnection();  
+Connection con2 = dataSource.getConnection();
+```
+### 특징
+- 설정과 사용을 분리할 수 있으므로 향후 변경에 더 유용하게 대처할 수 있다.
+- 리포지토리는 DataSource만 의존하고 파라미터 속성들을 몰라도 된다.
+## DI의 장점
+- 의존하는 클래스를 변경할때도 사용하는 클래스는 전혀 변경할 필요가 없다.
+```Java
+void beforeEach() {  
+        // 기본 DriverManger를 통한 새로운 커넥션을 획득  
+        DriverManagerDataSource dataSource = new DriverManagerDataSource(URL, USERNAME, PASSWORD);  
+
+		// Hikari DataSource 사용
+        HikariDataSource dataSource = new HikariDataSource();  
+        dataSource.setJdbcUrl(URL);  
+        dataSource.setUsername(USERNAME);  
+        dataSource.setPassword(PASSWORD);  
+
+		// 필요한 dataSource를 주입하는 부분
+        repository = new MemberRepositoryV1(dataSource);  
+    }
+```
+# 트랜잭션
+## 기본 개념
+- 데이터의 정합성을 지키기 위함이다. 신뢰성 상승
+- 트랜잭션 ACID
+- 트랜잭션 격리 수준
+	- READ UNCOMMITED
+	- READ COMMITTED
+	- REPEATABLE READ
+	- SERIALZABLE
+## 데이터베이스 연결 구조와 DB 세션
+- 사용자는 WAS나 DB 접근 툴을 사용하여서 데이터베이스 서버와 연결을 요청 이후 커넥션을 맺게 된다.
+- 이 때 데이터베이스 서버 내부에는 세션을 생성 하고 이후 커넥션을 통한 모든 요청은 세션을 통해서 실행이 된다.
+- 세션은 트랜잭션을 시작하고 커밋 도는 롤백을 통해서 트랜잭션을 종료한다.
+```mermaid
+flowchart LR
+    subgraph 클라이언트
+        C1[커넥션]
+        C2[커넥션]
+        note1[WAS, DB 접근 툴<br>스프링 부트, H2 Console]
+    end
+
+    subgraph 데이터베이스 서버
+        DBC1[커넥션]
+        DBC2[커넥션]
+        S1[세션]
+        S2[세션]
+        D1[트랜잭션 시작<br>SQL 실행<br>트랜잭션 커밋]
+        D2[트랜잭션 시작<br>SQL 실행<br>트랜잭션 커밋]
+        DBC1 --> S1
+        DBC2 --> S2
+        S1 --> D1
+        S2 --> D2
+        note2[데이터 베이스 서버]
+    end
+
+    C1 --> DBC1
+    C2 --> DBC2
+
+    style note1 fill:#fff,stroke:#fff
+    style note2 fill:#fff,stroke:#fff
+```
+
+## 자동 커밋, 수동 커밋
+기본은 자동 커밋이므로 수동 커밋모드로 설정 하는 것을 트랜잭션을 시작한다고 표현을 한다.   
+중요한 데이터를 다룰 때에는 수동 커밋 모드를 사용해서 수동으로 커밋, 롤백 할 수 있도록 해야 한다
+## 락을 다루기
+### 락의 기본 개념
+- 트랜잭션을 시작하고 데이터를 수정하는 동안 아직 커밋을 수행하지 않았는데 다른 세션에서 동시에 데이터를 수정하려고 하는 경우에 문제가 발생할 수 있다.
+- 이를 보완하기 위해서 커밋이나 롤백 전까지 다른 세션에서 해당 데이터를 수정할 수 없게 막는 것을 락이라고 한다.
+### 락의 종류
+- 수동 커밋을 시작하고 수정하는 동안에는 lock을 획득 할 수 있다.
+```Java
+set autocommit true;
+delete from member;
+insert into member(member_id, money) values ('memberA',10000);
+```
+- `for update` 구문을 사용해서 select 할 때에도 lock을 획득할 수 있다
+```Java
+set autocommit false;
+select * from member where member_id='memberA' for update;
+```
