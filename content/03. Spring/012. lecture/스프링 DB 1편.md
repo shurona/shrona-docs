@@ -325,3 +325,102 @@ PlatformTransactionManager transactionManager() {
 	- 둘다 사용하는 경우 `JpaTransactionManager` 를 등록한다.
 		- `JpaTransactionManager` 는 `DataSourceTransactionManager` 가 제공하는 
 		  기능도 대부분 지원한다
+# 자바 예외
+## 자바 에러 구조 다이어그램
+```mermaid
+graph TD
+    Object --> Throwable
+    Throwable --> Error
+    Error --> OutOfMemoryError
+    Throwable --> Exception
+    Exception --> SQLException
+    Exception --> IOException
+    Exception --> RuntimeException
+    RuntimeException --> NullPointerException
+    RuntimeException --> IllegalArgumentException
+
+    %% 체크 예외(Checked Exception) 영역 강조
+    subgraph 체크 예외
+        SQLException
+        IOException
+        Exception
+    end
+
+    %% 언체크 예외(Unchecked Exception), 런타임 예외(Runtime Exception) 영역 강조
+    subgraph "언체크 예외, 런타임 예외"
+        RuntimeException
+        NullPointerException
+        IllegalArgumentException
+    end
+    
+	%% 개발자가 잡으면 안되는 에러 영역 강조
+    subgraph "애플리케이션 복구 불가능 예외"
+        Error
+        OutOfMemoryError
+    end
+
+```
+- Error는 예외로 잡으면 안된다. => `Throwable`예외를 잡으면 안된다.
+- 언체크 에러를 런타임 에러라고 부른다.
+## 예외 기본 규칙
+- 예외를 처리하지 못하면 호출한 곳으로 예외를 계속 던지게 된다.
+- 지정한 예외 뿐만 아니라 하위 예외 들도 모두 잡게 된다.
+- 예외는 잡거나 처리하는 두 가지 방법으로 처리해야 한다.
+## 체크 예외 활용
+### 기준
+- 기본적으로는 언체크 예외를 사용하자
+- 체크 예외는 비즈니스 로직상 의도적으로 던지는 예외에만 사용하자.
+- 체크 예외 예시
+	- 계좌 이체 실패
+	- 결제시 포인트 부족
+	- 로그인 불일치
+### 체크 예외의 문제점
+- 시스템 아래에서 발생하는 심각한 문제들은 대부분의 애플리케이션 로직에서 처리할 방법이 없다.
+- 예를 들어 Infra layer에서 `SQlException`, `ConnectException`을 발생한다고 하면 서비스레이어에서 처리를 할 수가 없어서 Controller로 던져야 한다.
+- 따라서 처리할 수 없는 상황임에도 무조건 코드에 명시를 해서 던져줘야 하는 번거로움이 존재한다.
+  불필요한 코드의 작성이 필요하다.
+- ControllerAdvice와 같은 곳에서 예외를 공통 처리한다.
+```Java
+// 서비스 및 controller에서 아래의 예외들을 계속해서 잡고 가야 한다.
+public void request() throws SQLException, ConnectException {  
+    service.logic();  
+}
+
+static class NetworkClient {  
+  
+    public void call() throws ConnectException {  
+        throw new ConnectException("연결 실패");  
+    }  
+}  
+  
+static class Repository {  
+  
+    public void call() throws SQLException {  
+        throw new SQLException("ex");  
+    }  
+}
+```
+### 2가지 문제
+- 복구 불가능 문제
+	- 대부분의 서비스나 컨트롤러에서는 이런 문제를 해결할 수 없다.
+	- 이런 문제들은 일관성 있게 공통으로 처리를 해줘야 한다.
+		- 서블릿 필터, 스프링 인터셉터, `ControllerAdvice`이런 곳에서 공통 처리 해야 한다.
+- 의존 관계에 대한 문제
+	- 서비스나 컨트롤러에서 처리할 수 없어도 `throws`를 선언해서 던지는 예외를 선언해야 한다.
+	- 이러다보면 service나 controller에서 `SQLException`과 같은 다른 레이어에 의존을 하게 된다.
+## 언체크 예외 활용
+### 개념
+- 서비스나 컨트롤러에서는 처리를 할 수 없기 때문에 런타임으로 둔다.
+- 이후에 공통 처리 로직에서 해당 런타임 에러를 받아서 처리한다.
+- 예외를 던질 때 기존 예외를 포함시켜줘야 예외 출력 시 스택 트레이스에서 기존 예외도 함께 확인할 수 있다.
+### 특징
+- 런타임 예외를 사용하면 중간에 기술이 변경되어도 해당 예외를 사용하지 않는 컨트롤러, 서비스에서는 코드를 변경하지 않아도 된다.
+- 구현 기술이 변경되어도 공통 처리하는 한곳만 변경하면 되기 때문에 변경의 영향 범위는 최소화 된다.
+## 예외 포함 및 스택 트레이스
+### 기준
+- 예외를 전환할 때에는 꼭 기존 예외를 포함해야 한다.
+# 스프링과 문제해결 - 예외 처리, 반복
+## 체크 예외와 인터페이스
+- 인터페이스의 구현체가 체크 예외를 던지려면, 인터페이스 메서드에 먼저 체크 예외를 던지는 부분이 선언 되어있어야 한다. => 특정 구현에 종속적이 될 수 밖에 없다.
+- 예를 들어 `SQLException`이 선언되어 있을 때 기술을 JDBC -> JPA로 변경하게 되는 경우
+  모든 예외 처리 부분을 기술 변경에 맞게 바꿔줘야 한다.
