@@ -424,3 +424,51 @@ static class Repository {
 - 인터페이스의 구현체가 체크 예외를 던지려면, 인터페이스 메서드에 먼저 체크 예외를 던지는 부분이 선언 되어있어야 한다. => 특정 구현에 종속적이 될 수 밖에 없다.
 - 예를 들어 `SQLException`이 선언되어 있을 때 기술을 JDBC -> JPA로 변경하게 되는 경우
   모든 예외 처리 부분을 기술 변경에 맞게 바꿔줘야 한다.
+## 데이터 접근 예외 만들기
+- 데이터베이스에서 반환하는 오류 코드를 확인해서 오류반환 로직을 커스텀 할 수 있다.
+- 특정 코드로 에러를 반환하는 예시
+```Java
+catch (SQLException e) {  
+    //h2 db  
+    if (e.getErrorCode() == 23505) {  
+        throw new MyDuplicateKeyException(e);  
+    }  
+    throw new MyDbException(e);  
+}
+```
+## 스프링 예외 추상화
+### 문제점
+- 데이터베이스에서 발생할 수 있는 error code를 기준으로 에러 핸들링을 추상화 했다고 했을 때 에러 코드의 값이 DB 종류마다 다르기 때문에 의존하는 DB가 변경이 되면 모든 코드를 수정해야 하는 번거로움이 존재한다.
+### 제공
+- JDBC나 JPA를 사용할 때 발생하는 예외를 스프링이 제공하는 예외로 변환해주는 역할을 스프링이 제공해준다.
+- 각각의 예외는 특정 기술에 종속적이지 않게 제공을 해준다.
+- 스프링은 데이터베이스에서 발생하는 오류 코드를 스프링이 정의한 예외로 자동으로 변환해주는 변환기를 제공
+### DataAccessException
+- Transient
+	- 일시적인 예외로 다시 시도하면 성공할 수 있는 예외
+	- 예시로 쿼리 타임아웃, 락과 같은 오류가 있다.
+- NonTransient
+	- 같은 SQL을 반복해서 실행하면 무조건 실패하는 에러
+	- 예시로 SQL 문법 오류, DB 제약조건 위배 등이 있다.
+```Java
+// 사용법
+// 첫 번째 파라미터는 읽일 수 있는 설명
+SQLExceptionTranslator exTranslator = new
+SQLErrorCodeSQLExceptionTranslator(dataSource);
+DataAccessException resultEx = exTranslator.translate("select", sql, e);
+
+
+// 실제 Test 예시
+catch (SQLException e) {  
+    //org.springframework.jdbc.support.sql-error-codes.xml  
+    // 여기서 SQL에서 발생할 수 있는 예외를 변환해준다.
+    SQLExceptionTranslator exTranslator = new  
+        SQLErrorCodeSQLExceptionTranslator(dataSource);  
+    //org.springframework.jdbc.BadSqlGrammarException  
+    DataAccessException resultEx = exTranslator.translate("select", sql,  
+        e);  
+    log.info("resultEx", resultEx);  
+    assertThat(resultEx.getClass()).isEqualTo(BadSqlGrammarException.class);  
+}
+```
+- `sql-error-codes.xml`파일에서 어떻게 변환이 되는 지 확인해 볼 수 있다.
