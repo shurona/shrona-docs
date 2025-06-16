@@ -90,6 +90,7 @@ List<Friend> findByUser_Detail(String detail);
 ## `@Query` 어노테이션 사용하기
 JPQL을 직접 작성하는 방법   
 다만 매개변수의 이름이 메소드 파라미터 이름과 동일하다면 `@Param` 어노테이션을 생략할 수 있다.
+
 ```Java
 @Query("SELECT f FROM Friend f WHERE f.user.detail = :detail")
 List<Friend> findByUserDetail(@Param("detail") String detail);
