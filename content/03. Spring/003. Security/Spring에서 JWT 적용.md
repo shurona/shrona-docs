@@ -1,3 +1,9 @@
+---
+tags:
+  - spring/jwt
+---
+
+# 설정 과정
 ## Gradle 설정  추가
 ```gradle
 // spring security
@@ -158,3 +164,18 @@ public Authentication attemptAuthentication(HttpServletRequest request, HttpServ
 위의 에러가 나서 json의 변환 오류인지 아니면 Body 값이 제대로 읽히지 않은 것이 원인인지
 
 아래와 같이 Body 값을 확인해도 제대로 출력이 되어서 찾는 것이 오래 걸렸지만 원인은 DTO 클래스의 기본 생성자가 없는 것이 원인이였다.
+
+# RefreshToken 설정
+## refreshToken dto 설정
+```Java
+@RedisHash(value = "token", timeToLive = REFRESH_TOKEN_TIME)  
+@NoArgsConstructor  
+@Getter  
+public class RefreshToken {  
+  
+    private Long userId;  
+    private String token;  
+    private LocalDateTime createdAt; // 토큰 생성 시간  
+}
+```
+ 

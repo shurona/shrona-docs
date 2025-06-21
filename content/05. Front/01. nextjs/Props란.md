@@ -26,6 +26,13 @@ export default async function Page(props: {
 ```
 ## Next.js만의 특징
 - 페이지와 레이아웃에서는 `Next.js`가 자동으로 `props.params`, `props.searchParam`, `props.children`등을 자동 주입
+### 상세 정보
+| **prop 이름**  | **타입 (TypeScript)**                             | **설명 및 예시**                                          |
+| ------------ | ----------------------------------------------- | ---------------------------------------------------- |
+| params       | Record<string, string>                          | [id] 같은 폴더명으로 정의한 세그먼트의 실제 값이 담깁니다.                  |
+| searchParams | Record<string, string \| string[] \| undefined> | URL 쿼리스트링 (예: ?q=foo&page=2) 값을 key-value 형태로 제공합니다. |
+| children     | React.ReactNode                                 | 해당 레이아웃 아래에 렌더링될 하위 페이지/레이아웃 트리가 들어옵니다.              |
+
 ## 사용 이유
 - UI 재사용
 	- 같은 컴포넌트를 다른 데이터로 여러번 렌더링

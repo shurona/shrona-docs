@@ -2,8 +2,7 @@
 tags:
   - jwt
 ---
-
-## 개념
+# 개념
 json 포맷을 이용하여서 사용자의 속성을 저장하는 Claim 기반의 Web Token이다.
 RFC 7519 표준에 정의된 토큰으로, 클라이언트와 서버 간에 정보를 안전하게 전달하기 위한 방식입니다.
 
@@ -52,3 +51,46 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6InNodXJ
   "iat": 1516239022
 }
 ```
+## Refresh Token
+### 정의
+- JWT에서 **Refresh Token**은 만료된 Access Token을 갱신하기 위해 발급되는 토큰이다.
+### Flow
+```mermaid
+flowchart TD
+    subgraph Client
+        A[사용자 → 로그인 폼 제출]
+        D[Access/Refresh Token 저장]
+        E["API 요청 (Access Token 포함)"]
+        I[401 응답 시 Refresh 요청]
+        L[새 토큰 저장 및 원래 요청 재시도]
+    end
+
+    subgraph AuthServer
+        B[자격 증명 검증]
+        C[Access Token + Refresh Token 발급]
+        J[Refresh Token 검증]
+        K["새로운 Access(+Refresh) Token 발급"]
+    end
+
+    subgraph ResourceServer
+        F{Access Token 유효?}
+        G[요청 처리 및 데이터 반환]
+        H[401 Unauthorized 반환]
+    end
+
+    A --> B
+    B -- 인증 성공 --> C
+    C --> D
+    D --> E
+    E --> F
+    F -- 유효 --> G
+    F -- 만료/무효 --> H
+    H --> I
+    I --> J
+    J -- 검증 성공 --> K
+    K --> L
+    L --> E
+```
+
+### 정리
+- jwt refresh
