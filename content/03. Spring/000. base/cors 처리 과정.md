@@ -71,3 +71,4 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
 ```
 ### 주의 사항
 - CorsFilterChain을 사용하는데 Filter Chain의 순서가 뒤집힐 수 있으니 주의하자.
+- 처음에는 Bean으로 주입했었는데 그렇게 하면 동작하지 않으니 직접 함수로 주입해주자
