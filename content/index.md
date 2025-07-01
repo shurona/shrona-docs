@@ -8,3 +8,7 @@ publish: true
 ## 목적
 한 번 학습한 내용을 다시 찾는 과정을 줄이기 위해서 작성을 시작하였습니다.
 
+## 로컬 테스트
+```
+npx quartz build --serve --port {port}
+```
