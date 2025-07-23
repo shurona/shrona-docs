@@ -220,3 +220,18 @@ assertThatExceptionOfType(AuthException.class).isThrownBy(() -> {
 })
 .withMessage(USER_NOT_FOUND.getMessage());
 ```
+## Mockito에서 Entity의 아이디를 등록하기
+- id 필드를 갖고 와서 특정 값을 주입해 주는 방식으로 메소드를 만든다.
+```Java
+private void setEntityId(Object entity, Long id) 
+	throws NoSuchFieldException, IllegalAccessException {
+	
+    Field idField = entity.getClass().getDeclaredField("id");  
+    idField.setAccessible(true);  
+    idField.set(entity, id);  
+}
+```
+- 아래와 같이 entity를 생성 후 id를 주입하면 된다.
+```Java
+setEntityId(user1, 1L);
+```

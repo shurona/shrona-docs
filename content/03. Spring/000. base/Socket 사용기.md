@@ -74,6 +74,18 @@ public class WebSocketStompConfig implements WebSocketMessageBrokerConfigurer {
     }  
 }
 ```
+### sock.js를 사용한 소켓 통신 보완
+- 클라이언트와 서버가 WebSocket으로 연결을 시도할 때, 브라우저나 네트워크 환경에 따라 WebSocket 프로토콜이 지원되지 않을 수 있다
+- 이런 상황에서 정상적으로 양방향 통신을 할 수 있도록 하는 fallback(대체 통신) 기능을 활성화하는 설정이다.
+- SockJS를 적용하면, 클라이언트가 우선 WebSocket으로 연결을 시도하지만, 브라우저가 WebSocket을 지원하지 않거나 방화벽, 프록시 등 환경적 제약으로 실패하면, HTTP Streaming, HTTP Long Polling 등 SockJS가 제공하는 다양한 대체 방식으로 자동 전환하여 메시지 통신을 이어나간다.
+- SockJS 활성화 시 클라이언트와 서버 양쪽이 모두 SockJS 프레이밍을 기반으로 통신해야 한다
+- 예시 코드
+```Java
+@Override  
+public void registerStompEndpoints(StompEndpointRegistry registry) {  
+    registry.addEndpoint("socket/chat").withSockJS();  
+}
+```
 ## 메시지의 전송 관련 설정
 ```Java
 @Override
