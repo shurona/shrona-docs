@@ -1,5 +1,0 @@
----
-tags:
-  - hook
-  - react/hook
----
