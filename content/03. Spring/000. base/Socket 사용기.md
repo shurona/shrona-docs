@@ -296,7 +296,72 @@ public void onConnect(SessionConnectEvent event) {
 ```
 `ChannelInterceptor`와 `@EventListener(SessionConnectEvent.class)`를 사용해서 소켓이 연결 되었을 때 어떤 부분이 먼저 호출되는지 확인해 본 결과 `ChannelInterceptor`가 먼저 호출되는 것을 확인할 수 있었다.   
 # 소켓 에러 핸들링
-# 적용 중에 발생한 문제
+## SubProtocolErrorHandler
+- WebSocket의 하위 프로토콜(STOMP 등) 통신 중 발생하는 에러를 처리하기 위한 인터페이스
+```Java
+public interface SubProtocolErrorHandler<P> {
+    /**
+     * 클라이언트 메시지 처리 중 발생한 에러를 처리
+     * @param clientMessage 에러와 관련된 클라이언트 메시지 (null 가능)
+     * @param ex 발생한 예외 (항상 존재)
+     * @return 클라이언트에게 보낼 에러 메시지 (null이면 메시지 전송 안함)
+     */
+    @Nullable
+    Message<P> handleClientMessageProcessingError(@Nullable Message<P> clientMessage, Throwable ex);
+
+    /**
+     * 서버에서 클라이언트로 전송되는 에러 메시지를 처리
+     * @param errorMessage 서버에서 전송될 에러 메시지
+     * @return 클라이언트에게 보낼 에러 메시지 (null이면 메시지 전송 안함)
+     */
+    @Nullable
+    Message<P> handleErrorMessageToClient(Message<P> errorMessage);
+}
+```
+## StompSubProtocolErrorHandler
+- Spring에서 제공하는 STOMP 프로토콜용 기본 에러 핸들러
+### 주요 특징
+- **ERROR 프레임 생성** 
+	- 클라이언트 메시지 처리 중 에러 발생 시 STOMP ERROR 프레임을 생성합니다.
+- **Receipt ID 처리** 
+	- 클라이언트가 보낸 메시지에 receipt ID가 있다면 에러 응답에도 포함합니다.
+- **빈 페이로드**
+	- 기본적으로 빈 바이트 배열을 페이로드로 사용합니다.
+### 메소드 별 동작
+#### handleClientMessageProcessingError
+```Java
+public Message<byte[]> handleClientMessageProcessingError(@Nullable Message<byte[]> clientMessage, Throwable ex) {
+    // 1. ERROR 명령어로 STOMP 헤더 접근자 생성
+    StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.ERROR);
+    ...
+
+    // 2. 클라이언트 메시지에서 receipt ID 추출 및 설정
+    StompHeaderAccessor clientHeaderAccessor = null;
+    ...
+
+    // 3. 내부 처리 메서드 호출
+    return handleInternal(accessor, EMPTY_PAYLOAD, ex, clientHeaderAccessor);
+}
+```
+#### handleErrorMessageToClient
+```Java
+public Message<byte[]> handleErrorMessageToClient(Message<byte[]> errorMessage) {
+    // 1. 기존 에러 메시지에서 STOMP 헤더 접근자 추출
+    StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(errorMessage, StompHeaderAccessor.class);
+    Assert.notNull(accessor, "No StompHeaderAccessor");
+    
+    // 2. 변경 가능한 상태로 만들기
+    if (!accessor.isMutable()) {
+        accessor = StompHeaderAccessor.wrap(errorMessage);
+    }
+    
+    // 3. 내부 처리 메서드 호출
+    return handleInternal(accessor, errorMessage.getPayload(), null, null);
+}
+```
+
+
+# Socket 적용 중에 발생한 문제
 ## STOMP 헤더에 addNativeHeader를 추가했는데 controller에서 못차는 경우
 ### 문제 접근
 소켓의 인증을 구현하기 위해서 소켓이 연결되었을 때 JWT 토큰에서 userId를 갖고 와서 Header에 넣어 주고 Controller 및 `@EventListener`에서 userId를 접근 하려고 하였다.   
@@ -332,7 +397,34 @@ addNativeHeader를 이용해서 헤더에 추가를 하면 STMOP 메시지의 �
 
 ### Header의 특징
 - **Native Header의 특성**  
-	STOMP 프로토콜에서 native header는 클라이언트가 처음에 전송한 헤더를 의미하며, 이 값들은 메시지 변환 시점에 파싱되고 그 상태로 어플리케이션에 전달됩니다. interceptor나 특정 이벤트에서 `setNativeHeader("userId", "Hello world")`로 값을 추가하더라도 이 변경 사항은 현재 메시지 처리 흐름 내에서만 적용되고, 이후 컨트롤러에 도달하는 별도의 메시지 accessor에는 반영되지 않습니다.
+	- STOMP 프로토콜에서 native header는 클라이언트가 처음에 전송한 헤더를 의미하며, 이 값들은 메시지 변환 시점에 파싱되고 그 상태로 어플리케이션에 전달됩니다. 
+	- interceptor나 특정 이벤트에서 `setNativeHeader("userId", "Hello world")`로 값을 추가하더라도 이 변경 사항은 현재 메시지 처리 흐름 내에서만 적용되고, 이후 컨트롤러에 도달하는 별도의 메시지 accessor에는 반영되지 않습니다.
     
 - **메시지 재구성**  
-    WebSocket 메시지는 내부적으로 여러 단계의 변환 과정을 거치며, interceptor에서 수정한 header 값은 최초 CONNECT 프레임에서만 유효합니다. 즉, 컨트롤러로 도달하는 메시지는 클라이언트가 전송한 원본 header와 새로운 어태치먼트가 합쳐진 형태로 변환되기 때문에 interceptor에서 임의로 추가한 native header는 사라집니다.
+	- WebSocket 메시지는 내부적으로 여러 단계의 변환 과정을 거치며, interceptor에서 수정한 header 값은 최초 CONNECT 프레임에서만 유효합니다. 
+	- 즉, 컨트롤러로 도달하는 메시지는 클라이언트가 전송한 원본 header와 새로운 어태치먼트가 합쳐진 형태로 변환되기 때문에 interceptor에서 임의로 추가한 native header는 사라집니다.
+# 소켓 에서 이벤트 캐치하기
+## 구독 연결 시
+-  SessionSubscribeEvent
+	- 이벤트에 sessionId, subscriptionId, destination (예: /topic/room/123)이 포함
+```Java
+@EventListener
+public void onSubscribe(SessionSubscribeEvent ev) {
+	StompHeaderAccessor acc = StompHeaderAccessor.wrap(ev.getMessage());
+	String sid = acc.getSessionId();
+	String subId = acc.getNativeHeader("id").get(0);
+}
+```
+## 구독 해제 시
+- SessionUnsubscribeEvent
+	- subscriptionId와 sessionId는 포함되지만, 대부분의 경우 destination은 null
+```Java
+@EventListener
+public void onUnsubscribe(SessionUnsubscribeEvent ev) {
+	StompHeaderAccessor acc = StompHeaderAccessor.wrap(ev.getMessage());
+	String sid = acc.getSessionId();
+	String subId = acc.getNativeHeader("id").get(0);
+}
+```
+
+
