@@ -360,7 +360,72 @@ public Message<byte[]> handleErrorMessageToClient(Message<byte[]> errorMessage) 
 }
 ```
 
+## 에러 처리 과정
+###  연결을 유지하면서 에러 알림
+- 일반적인 메시지 처리 에러의 경우 연결을 끊지 말고 일반 메시지로 에러를 전달
+```Java
+// 에러를 일반 메시지로 전달 (연결 유지)
+@MessageMapping("/chat/send")
+public void handleMessage(@Payload ChatMessage message, Principal principal) {
+    try {
+        // 메시지 처리 로직
+        chatService.processMessage(message);
+    } catch (ChatException e) {
+        // ERROR 헤더 대신 일반 메시지로 에러 응답
+        template.convertAndSendToUser(
+            principal.getName(),
+            "/queue/errors",  // 에러 전용 큐
+            ErrorResponse.builder()
+                .type("CHAT_ERROR")
+                .message("메시지 처리 중 오류가 발생했습니다.")
+                .build()
+        );
+    }
+}
+```
+### 연결을 끊어야 하는 심각한 에러
+- 인증과 같은 심각한 오류의 경우 소켓을 차단한다.
+```Java
+public Message<byte[]> handleClientMessageProcessingError(
+    @Nullable Message<byte[]> clientMessage, Throwable ex) {
+    
+    Throwable rootCause = getRootCause(ex);
+    
+    if (rootCause instanceof UserException) {
+        // 인증/권한 에러 - 연결 종료 필요
+        StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.ERROR);
+        accessor.setMessage("인증이 필요합니다. 연결을 종료합니다.");
+        return handleInternal(accessor, EMPTY_PAYLOAD, ex, null);
+    } else {
+        // 일반 에러 - 연결 유지하며 에러 응답
+        return handleGeneralError(rootCause, clientMessage);
+    }
+}
+```
+### 에러 전용 엔드포인트를 아래와 같이 선언할 수 있다.
+```Java
+@Component
+@RequiredArgsConstructor
+public class SocketErrorHandler {
+    
+    private final SimpMessagingTemplate template;
+    
+    // 연결을 유지하면서 에러 전달
+    public void sendErrorToUser(String sessionId, String errorType, String message) {
+        template.convertAndSendToUser(
+            sessionId,
+            "/queue/errors",
+            Map.of(
+                "type", errorType,
+                "message", message,
+                "timestamp", System.currentTimeMillis()
+            )
+        );
+    }
+    //...
+}
 
+```
 # Socket 적용 중에 발생한 문제
 ## STOMP 헤더에 addNativeHeader를 추가했는데 controller에서 못차는 경우
 ### 문제 접근
