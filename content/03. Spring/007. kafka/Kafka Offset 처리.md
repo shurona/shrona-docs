@@ -6,10 +6,7 @@ tags:
 # 카프카 ack-mode에서 offset 처리
 ## Batch
 ### 개념
-- Spring Kafka의 기본 ack-mode
-- `poll()` 메서드로 호출된 레코드 배치가 모두 처리된 이후 커밋
-- 리스너 컨테이너가 배치 처리 완료를 감지하면 자동으로 커밋하므로 별도의 `acknowledge()` 호출 불필요
-- 배치의 모든 메시지 처리가 완료된 후에만 offset을 commit한다.
+- Spring Kafka의 기본 ack# offset 처리 중 발생한 문제
 ### 특징
 **장점**
 - offset commit 횟수가 줄어들어 네트워크 오버헤드가 감소한다.
@@ -99,10 +96,32 @@ public void processOrder(OrderEvent order, Acknowledgment ack) {
 }
 ```
 # offset 처리 중 발생한 문제
-## acknowledge()를 호출하지 않아도 내부적으로는 offset이 증가하는 문제
-### 원인
-- Spring Kafka에서는 메시지 처리와 offset commit이 별개의 과정으로 이루어진다.
-- `MANUAL` ack 모드에서도 다음과 같은 동작이 발생합니다:
-### 메시지 처리 위치 vs Commit된 Offset
-- 처리 중인 offset: Kafka 컨슈머가 현재 읽어서 처리하고 있는 메시지의 위치
-- Commit된 offset: 실제로 Kafka 브로커에 저장된 마지막으로 성공적으로 처리 완료된 위치
+## MANUAL 모드에서 acknowledge() 호출하지 않아도 컨슈머가 계속 진행하는 현상
+### 현상 설명
+MANUAL 모드에서 `acknowledge()`를 호출하지 않아도 컨슈머가 계속해서 다음 메시지들을 처리하는 상황이 발생합니다.
+### 원인 분석
+Spring Kafka에서는 **메시지 읽기(polling)**와 **offset commit**이 완전히 별개의 과정으로 동작하기 때문입니다.
+### 메시지 처리 위치 vs Commit된 Offset의 차이
+**1. 컨슈머의 현재 처리 위치 (Current Position)**
+- Kafka 컨슈머가 현재 읽어서 처리하고 있는 메시지의 offset
+- `acknowledge()`를 호출하지 않아도 계속 증가
+- 컨슈머는 poll()을 통해 계속 다음 배치의 메시지들을 가져옴
+
+**2. 브로커에 Commit된 Offset (Committed Offset)**
+- 실제로 Kafka 브로커에 저장된 "처리 완료" 지점
+- `acknowledge()` 호출 시에만 업데이트됨
+- 서버 재시작 시 이 지점부터 다시 시작
+### 동작 예시
+```
+토픽의 메시지: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+시나리오:
+1. 메시지 1, 2, 3 처리 → acknowledge() 호출 → offset 3 커밋
+2. 메시지 4, 5, 6 처리 → acknowledge() 호출 안함
+3. 메시지 7, 8, 9 처리 → acknowledge() 호출 안함
+
+결과:
+- 컨슈머 현재 위치: offset 9까지 처리 완료
+- 브로커 저장된 offset: 3 (마지막 커밋 지점)
+- 서버 재시작 시: offset 4부터 다시 시작 (4,5,6,7,8,9 중복 처리)
+```
