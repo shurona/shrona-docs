@@ -99,10 +99,10 @@ public class NonBlockingRetryConfig {
             .newInstance()
             .maxAttempts(3)
             .exponentialBackoff(2000, 2.0, 10000) // 2초 시작, 2배씩 증가, 최대 10초
-            .dltSuffix(".dlt")
-            .retryOn(RecoverableException.class)
-            .notRetryOn(ValidationException.class)
-            .includeTopics("chat-topic")
+            .dltSuffix(".dlt") // 지정된 Topic에서 dlt 추가
+            .retryOn(RecoverableException.class) // 재시도 할 Exception
+            .notRetryOn(ValidationException.class) // 재시도 하지 않을 Exception
+            .includeTopics("chat-topic") // 적용할 토픽
             .autoCreateTopics(true) // 자동 토픽 생성
             .numPartitions(3)
             .replicationFactor(2)
@@ -110,6 +110,4 @@ public class NonBlockingRetryConfig {
     }
 }
 ```
-# 에러 처리 중 발생한 것
-## DltHandler 미작동
-@DltHandler는 Spring Kafka의 자동 재시도 설정(@RetryableTopic)과 함께 사용될 때만 작동합니다. 현재 설정처럼 수동으로 DeadLetterPublishingRecoverer를 구성한 경우에는 DLT 토픽을 직접 리스닝해야 합니다.
+
