@@ -201,7 +201,7 @@ RetryTopic을 사용하면 자동으로 다음과 같은 토픽들이 생성됩�
 
 ## 실무 적용 가이드
 
-### 1. 블로킹 vs 논블로킹 선택 기준
+### 블로킹 vs 논블로킹 선택 기준
 
 | 구분            | DefaultErrorHandler (블로킹) | RetryTopic (논블로킹) |
 | ------------- | ------------------------- | ----------------- |
@@ -211,7 +211,7 @@ RetryTopic을 사용하면 자동으로 다음과 같은 토픽들이 생성됩�
 | **설정 복잡도**    | 간단                        | 복잡                |
 | **토픽 관리**     | 불필요                       | 추가 토픽 관리 필요       |
 | **예시**     | 주문 처리 시스템(순서 보장 중요)      | 알림 시스템(순서 중요하지 않음)|
-### 2. DLT(Dead Letter Topic) 활용
+### DLT(Dead Letter Topic) 활용
 
 ```Java
 @DltHandler
@@ -226,8 +226,16 @@ public void handleDltMessage(ChatMessage message,
     failureRepository.save(new FailedMessage(message, errorMessage));
 }
 ```
-## 결론
 
+### Spring Kafka는 다음 순서로 에러 핸들러를 결정합니다
+- @RetryableTopic 어노테이션 확인
+- RetryTopicConfiguration Bean에서 includeTopic 확인
+- 위에 해당하지 않으면 ConcurrentKafkaListenerContainerFactory의 CommonErrorHandler 사용
+### 다이어그럼
+```text
+@RetryableTopic → RetryTopicConfiguration → CommonErrorHandler
+```
+## 결론
 Spring Kafka의 재시도 처리는 시스템의 안정성과 성능에 직접적인 영향을 미칩니다. 
 
 - **간단하고 빠른 재시도**가 필요하다면 → **DefaultErrorHandler**
