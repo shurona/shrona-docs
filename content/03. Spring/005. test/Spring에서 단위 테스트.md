@@ -220,7 +220,8 @@ assertThatExceptionOfType(AuthException.class).isThrownBy(() -> {
 })
 .withMessage(USER_NOT_FOUND.getMessage());
 ```
-## Mockito에서 Entity의 아이디를 등록하기
+## 테스트 환경에서 변수 주입
+### Entity의 private 필드에 접속하기
 - id 필드를 갖고 와서 특정 값을 주입해 주는 방식으로 메소드를 만든다.
 ```Java
 private void setEntityId(Object entity, Long id) 
@@ -234,4 +235,19 @@ private void setEntityId(Object entity, Long id)
 - 아래와 같이 entity를 생성 후 id를 주입하면 된다.
 ```Java
 setEntityId(user1, 1L);
+```
+### 상속받는 변수의 경우에서 처리 방법
+- 위와 같이 `entity.getClass()`의 경우 상속받는 변수에 대해서는 처리가 불가능하다.
+```Java
+private void setEntityCreateTime(Object entity, LocalDateTime createdAt) {  
+    Field field = ReflectionUtils.findField(entity.getClass(), "createdAt");  
+    if (field != null) {  
+        field.setAccessible(true);  
+        ReflectionUtils.setField(field, entity, createdAt);  
+    }  
+}
+```
+- 위와 같이 `ReflectionUtils`을 사용해서 field를 찾아서 추가하면 된다.
+```Java
+setEntityCreateTime(logFirst, LocalDateTime.now());
 ```
