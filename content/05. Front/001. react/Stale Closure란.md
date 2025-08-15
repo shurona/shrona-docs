@@ -3,7 +3,7 @@ tags:
   - Stale-Closure
 ---
 # 스테일 클로저 (Stale Closure) 문제
-## 스테일 클로저란?
+## 스테일 클로저란
 - **클로저가 생성된 시점의 변수 값을 "기억"하고 있어서, 최신 값이 아닌 예전 값을 참조하는 현상**
 ```tsx
 const [messages, setMessages] = useState<ChatLogResponseDto[]>([]);

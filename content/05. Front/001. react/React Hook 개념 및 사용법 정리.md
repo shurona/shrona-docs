@@ -3,6 +3,7 @@ tags:
   - hook
   - useState
   - useRef
+  - useEffect
 ---
 # UseState란
 ##  개념
@@ -29,3 +30,39 @@ useRef는 리액트에서 값을 유지하고 DOM 요소에 접근하기 위해
 	- useRef의 current 값을 변경해도 컴포넌트가 다시 렌더링되지않는다.
 - 참조 객체
 	- useRef는 { current: value } 형태의 객체를 반환한다.
+
+# useEffect
+## 개념
+useEffect는 React 함수형 컴포넌트에서 side effect(부수 효과)를 처리하기 위해 사용되는 Hook입니다. 컴포넌트가 렌더링된 후에 특정 작업을 수행하거나, 컴포넌트가 언마운트되기 전에 정리 작업을 수행할 때 사용됩니다. 클래스형 컴포넌트의 componentDidMount, componentDidUpdate, componentWillUnmount의 기능을 통합한 것으로 볼 수 있습니다.
+
+## 사용법
+```javascript
+useEffect(() => {
+  // 실행할 부수 효과
+}, [의존성 배열]);
+```
+
+- 첫 번째 인수: 실행할 함수 (effect function)
+- 두 번째 인수: 의존성 배열 (dependency array)
+
+## 특징
+- **컴포넌트 렌더링 후 실행**
+	- 컴포넌트가 DOM에 렌더링된 후에 effect가 실행됩니다.
+- **의존성 배열 제어**
+	- 빈 배열 `[]`: 컴포넌트 마운트 시에만 실행
+- 배열 없음: 매 렌더링마다 실행
+	- 값이 있는 배열: 해당 값이 변경될 때만 실행
+- **정리(cleanup) 함수**
+	- effect 함수에서 함수를 반환하면, 컴포넌트 언마운트 시 또는 다음 effect 실행 전에 정리 함수가 실행됩니다.
+
+```javascript
+useEffect(() => {
+  const timer = setInterval(() => {
+    console.log('Timer running');
+  }, 1000);
+
+  return () => {
+    clearInterval(timer); // 정리 함수
+  };
+}, []);
+```
