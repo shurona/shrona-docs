@@ -49,6 +49,9 @@ public class Base64EncoderExample {
 ## isBlank
 - 동작: 문자열이 비어 있거나, 공백 문자(스페이스, 탭, 개행 등)만으로 이루어진 경우에도 `true`를 반환합니다.
 - Java 11 이상에서 사용 가능
+- 아래 패키지를 사용해서 사용하자
+	- `org.apache.commons.langs.StringUtils`
+	- 비슷한 이름이 많아서 다른 비슷한 클래스를 import할 수 있음
 ### 예시
 ```Java
 "".isBlank();      // true
