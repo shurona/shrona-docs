@@ -62,7 +62,6 @@ public class WebSocketStompConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("stomp-socket");  
     }  
   
-    // TODO: 테스트를 한 번 해본다.
 	// 헤더에 따라서 메세지를 라우팅해준다.
     @Override  
     public void configureMessageBroker(MessageBrokerRegistry registry) {  

@@ -66,7 +66,6 @@ public class RequestUserJpaAuditConfig implements AuditorAware<String> {
         ServletRequestAttributes attributes  
             = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();  
   
-        //TODO: null일 때 어떻게 처리해야 하지  
         String userId = null;  
         if (attributes != null) {  
             HttpServletRequest request = attributes.getRequest();  
