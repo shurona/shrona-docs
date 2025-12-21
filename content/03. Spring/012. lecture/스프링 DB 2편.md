@@ -285,3 +285,93 @@ TODO: 뒤에 설명 링크 걸어놓자
 - 비즈니스 예외
 	- 주문시 결제 잔고가 부족하면 주문 데이터를 저장하고, 결제 상태를 `대기`
 	- 시스템 예외가 아니라 비즈니스 상황이 예외인 것이다.
+# 스프링 트랜잭션 전파1 - 기본
+트랜잭션이 진행중일때 추가로 트랜잭션을 수행하면 어떻게 처리할지 결정하는 것을 트랜잭션 전파라고 한다.
+## 전파 기본
+- 스프링은 이해를 돕기 위해 물리 트랜잭션과 논리 트랜잭션으로 개념을 나눈다
+- 물리 트랜잭션은 우리가 이해하는 실제 데이터베이스에 적용되는 트랜잭션을 뜻한다. 실제 커넥션을 통해서 트랜잭션을 시작(`setAutoCommit(false))` 하고, 실제 커넥션을 통해서 커밋, 롤백하는 단위이다.
+- 논리 트랜잭션은 트랜잭션 매니저를 통해 트랜잭션을 사용하는 단위이다.
+  이런 논리 트랜잭션은 트랜잭션이 진행되는 중에 내부에 트랜잭션을 사용하는 경우에 나타난다. 
+### 원칙
+- 모든 논리 트랜잭셔닝 커밋 되어야 물리 트랜잭셔닝 커밋된다.
+- 하나의 논리 트랜잭션이라도 롤백되면 물리 트랜잭션은 롤백된다.
+## 전파 예제
+- 트랜잭션이 시작되어  있는 지 상태를 확인하기 위한 클래스
+``` Java
+TransactionStatus outer 
+     = txManager.getTransaction(new DefaultTransactionAttribute());
+     
+outer.isNewTransaction()
+```
+- 하나의 로직 트랜잭션이 끝나더라도 물리 트랜잭션이 끝나지 않으면 아무일도 하지 않는다.
+- 내부 트랜잭션을 시작할 때 `Participating in existing transaction` 이라는 메시지를 확인할 수 있다.
+- 데이터베이스에 실제 커밋하는 것은 물리 트랜잭션만 가능하다.
+## 스프링 트랜잭션 전파 - 내부 롤백
+### 자바 코드
+```Java
+log.info("외부 트랜잭션 시작");  
+TransactionStatus outer = txManager.getTransaction(new  
+    DefaultTransactionAttribute());  
+log.info("내부 트랜잭션 시작");  
+TransactionStatus inner = txManager.getTransaction(new  
+    DefaultTransactionAttribute());  
+log.info("내부 트랜잭션 롤백");  
+txManager.rollback(inner);  
+log.info("외부 트랜잭션 커밋");  
+assertThatThrownBy(() -> txManager.commit(outer))  
+    .isInstanceOf(UnexpectedRollbackException.class);
+```
+### 로그
+```
+외부 트랜잭션 시작
+
+Creating new transaction with name [null]: PROPAGATION_REQUIRED,ISOLATION_DEFAULT
+
+Acquired Connection [HikariProxyConnection@438448733 wrapping conn0: url=jdbc:h2:mem user=SA] for JDBC transaction
+
+Switching JDBC Connection [HikariProxyConnection@438448733 wrapping conn0: url=jdbc:h2:mem user=SA] to manual commit
+
+내부 트랜잭션 시작
+
+Participating in existing transaction
+
+내부 트랜잭션 롤백
+
+# 논리 트랜잭션은 롤백을 할 수 없으므로 기존 트랜잭션을 롤백 전용을 표시한다.
+Participating transaction failed - marking existing transaction as rollback-only
+
+Setting JDBC transaction [HikariProxyConnection@438448733 wrapping conn0: url=jdbc:h2:mem user=SA] rollback-only
+
+외부 트랜잭션 커밋
+
+# 어딘가 누가 롤백 전용으로 표시되어 있으므로 롤백만 가능하도록 설정되어 있음을 인지한다.
+Global transaction is marked as rollback-only but transactional code requested commit
+
+Initiating transaction rollback
+```
+### 정리
+- 트랜잭션 매니저는 커밋 시점에 신규 트랜잭션 여부에 따라서 다르게 동작한다.
+- 롤백 전용(`rollbackOnly=true`)표시가 있는 지 확인한다. 
+  롤백 전용 표시가 있으면 커밋이 아니라 롤백을 한다. 
+- `UnexpectedRollbackException`런타임 에러를 발생시킨다.
+  시스템 입장에서 롤백이 되었음을 정확하게 알려주기 위함이다.
+## 스프링 트랜잭션 전파 - REQUIRES_NEW
+- 외부 트랜잭션과 내부 트랜잭션이 각각 별도의 물리 트랜잭션을 갖게 된다.
+### 동작 원리
+#### 외부 트랜잭션 시작
+- 외부 트랜잭션을 시작하면서 `conn0` 를 획득하고 `manual commit`으로 변경해서 물리 트랜잭션을 시작한다.
+- 외부 트랜잭션은 신규 트랜잭션이다.(`outer.isNewTransaction()=true` )
+#### 내부 트랜잭션 시작
+- 내부 트랜잭션을 시작하면서 `conn1` 를 획득하고 `manual commit`으로 변경해서 물리 트랜잭션을 시작한다.
+- 기존의 외부 트랜잭션은 보류된다.(실제로는 살아있고 잠깐 보관해두는 것이다.)
+- 내부 트랜잭션은 외부 트랜잭션에 참여하는 것이 아니라, `PROPAGATION_REQUIRES_NEW` 옵션을 사용했기 때문에 완전히 새로운 신규 트랜잭션으로 생성된다.(`inner.isNewTransaction()=true` )
+#### 내부 트랜잭션 롤백
+- 내부 트랜잭션을 롤백한다.
+- 내부 트랜잭션은 신규 트랜잭션이기 때문에 실제 물리 트랜잭션을 롤백한다.
+- 내부 트랜잭션은 `conn1` 을 사용하므로 `conn1` 에 물리 롤백을 수행 후 커넥션 풀에 반납된다.
+#### 외부 트랜잭션 커밋
+- 외부 트랜잭션을 커밋한다.
+- 외부 트랜잭션은 신규 트랜잭션이기 때문에 실제 물리 트랜잭션을 커밋한다.
+- 외부 트랜잭션은 `conn0` 를 사용하므로 `conn0` 에 물리 커밋을 수행한다.
+### 주의
+- `REQUIRES_NEW`를 사용하면 데이터베이스 커넥션이 동시에 2개 사용된다는 점을 주의해야 한다.
