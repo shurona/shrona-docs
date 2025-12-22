@@ -375,3 +375,45 @@ Initiating transaction rollback
 - 외부 트랜잭션은 `conn0` 를 사용하므로 `conn0` 에 물리 커밋을 수행한다.
 ### 주의
 - `REQUIRES_NEW`를 사용하면 데이터베이스 커넥션이 동시에 2개 사용된다는 점을 주의해야 한다.
+
+# 스프링 트랜잭션 전파2 - 활용
+## 커밋, 롤백
+- `LogRepository` 는 트랜잭션와 관련된 `con2` 를 사용한다.
+- `로그예외` 라는 이름을 전달해서 `LogRepository` 에 런타임 예외가 발생한다.
+- `LogRepository` 는 해당 예외를 밖으로 던진다. 이 경우 트랜잭션 AOP가 예외를 받게된다.
+- 런타임 예외가 발생해서 트랜잭션 AOP는 트랜잭션 매니저에 롤백을 호출한다.
+- 트랜잭션 매니저는 신규 트랜잭션이므로 물리 롤백을 호출한다.
+	- 이전에 유저를 저장할 때 사용한 트랜잭션에는 영향을 주지 않는다.
+## 단일 트랜잭션
+- 단일 스레드를 사용하면 트랜잭션 매니져는 같은 커넥션을 반환한다.
+## 복구 REQUIRED
+### 예시 코드
+- Commit할 때에는 항상 `rollbackOnly`를 체크함을 확인하는 코드
+```Java
+@Transactional  
+public void joinV2(String username) {  
+    Member member = new Member(username);  
+    Log logMessage = new Log(username);  
+    log.info("== memberRepository 호출 시작 ==");  
+    memberRepository.save(member);  
+    log.info("== memberRepository 호출 종료 ==");  
+    log.info("== logRepository 호출 시작 ==");  
+    try {  
+        logRepository.save(logMessage);  
+    } catch (RuntimeException e) {  
+        log.info("log 저장에 실패했습니다. logMessage={}",  
+            logMessage.getMessage());  
+        log.info("정상 흐름 변환");  
+    }  
+    log.info("== logRepository 호출 종료 ==");  
+}
+
+```
+- LogRepository` 에서 예외가 발생한다. 예외를 던지면 `LogRepository` 의 트랜잭션 AOP가 해당 예외를 받는다.
+- 신규 트랜잭션이 아니므로 물리 트랜잭션을 롤백하지는 않고, 트랜잭션 동기화 매니저에 `rollbackOnly` 를 표시한다.
+- 예외가 `MemberService` 에 던져지고, `MemberService` 는 해당 예외를 복구한다. 그리고 정상적으로 리턴한다.
+- 정상 흐름이 되었으므로 `MemberService` 의 트랜잭션 AOP는 커밋을 호출한다.
+- 커밋을 호출할 때 신규 트랜잭션이므로 실제 물리 트랜잭션을 커밋해야 한다. 이때 `rollbackOnly` 를 체크한다.
+- `rollbackOnly` 가 체크 되어 있으므로 물리 트랜잭션을 롤백한다.
+- 트랜잭션 매니저는 `UnexpectedRollbackException` 예외를 던진다.
+- 트랜잭션 AOP도 전달받은 `UnexpectedRollbackException` 을 클라이언트에 던진다.
