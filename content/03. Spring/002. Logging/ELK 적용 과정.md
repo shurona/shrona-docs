@@ -2,7 +2,6 @@
 tags:
   - elk
 ---
-
 # LogStash를 Spring에 적용해보자
 ## 적용 과정
 ### logstash 라이브러리를 build.gradle에 추가
