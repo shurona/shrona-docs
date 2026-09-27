@@ -36,7 +36,7 @@ ssh -T git@github.com
 ```
 
 - `gh auth status`: GitHub CLI 로그인 상태 확인
-- `git remote -v`: 저장소 remote가 SSH 주소인지 확인
+- `git remote -v`: 저장소 remote가 ㅓ2SSH 주소인지 확인
 - `ssh -T git@github.com`: 등록된 SSH 키로 GitHub 인증이 되는지 확인
 
 `ssh -T` 실행 시 GitHub가 셸 접근을 제공하지 않는다는 문구와 함께 사용자명이 표시되면 SSH 인증은 정상이다.
